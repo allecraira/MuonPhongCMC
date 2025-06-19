@@ -103,8 +103,8 @@ const RoomSearch = () => {
   const { user, logout } = useAuth();
   const [searchFilters, setSearchFilters] = useState({
     name: "",
-    building: "",
-    capacity: "",
+    building: "all",
+    capacity: "all",
   });
   const [filteredRooms, setFilteredRooms] = useState(allRooms);
 
@@ -117,13 +117,13 @@ const RoomSearch = () => {
       );
     }
 
-    if (searchFilters.building) {
+    if (searchFilters.building && searchFilters.building !== "all") {
       filtered = filtered.filter(
         (room) => room.building === searchFilters.building,
       );
     }
 
-    if (searchFilters.capacity) {
+    if (searchFilters.capacity && searchFilters.capacity !== "all") {
       const capacity = parseInt(searchFilters.capacity);
       filtered = filtered.filter((room) => {
         if (searchFilters.capacity === "small") return room.capacity <= 30;
@@ -284,7 +284,7 @@ const RoomSearch = () => {
                     <SelectValue placeholder="Chọn tòa nhà" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tất cả</SelectItem>
+                    <SelectItem value="all">Tất cả</SelectItem>
                     <SelectItem value="CS1">Tòa CS1</SelectItem>
                     <SelectItem value="CS2">Tòa CS2</SelectItem>
                     <SelectItem value="CS3">Tòa CS3</SelectItem>
@@ -305,7 +305,7 @@ const RoomSearch = () => {
                     <SelectValue placeholder="Số người" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tất cả</SelectItem>
+                    <SelectItem value="all">Tất cả</SelectItem>
                     <SelectItem value="small">10-30 người</SelectItem>
                     <SelectItem value="medium">30-60 người</SelectItem>
                     <SelectItem value="large">60+ người</SelectItem>
@@ -317,7 +317,7 @@ const RoomSearch = () => {
                   onClick={handleSearch}
                   className="w-full bg-cmcBlue-600 hover:bg-cmcBlue-700"
                 >
-                  T��m kiếm
+                  Tìm kiếm
                 </Button>
               </div>
             </div>
@@ -617,7 +617,7 @@ const RoomSearch = () => {
               </div>
               <p className="text-gray-400 text-sm">
                 Hệ thống đặt phòng trực tuyến hiện đại, tiện lợi và nhanh chóng
-                dành cho sinh viên Trường Đại học CMC.
+                dành cho sinh viên Tr��ờng Đại học CMC.
               </p>
             </div>
 
