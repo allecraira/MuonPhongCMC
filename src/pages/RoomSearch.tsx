@@ -270,7 +270,7 @@ const RoomSearch = () => {
                 key={room.id}
                 className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
               >
-                <Link to={`/rooms/${room.id}`}>
+                <Link to={`/rooms/${room.id}`} state={{ room }}>
                   <div className="aspect-video bg-gray-200 relative">
                     <div className="absolute top-4 left-4">
                       {getStatusBadge(room.status)}
