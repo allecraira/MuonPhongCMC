@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 import {
   Card,
   CardContent,
@@ -28,6 +29,8 @@ import {
 } from "lucide-react";
 
 const Index = () => {
+  const { user, logout } = useAuth();
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -66,13 +69,13 @@ const Index = () => {
                 Danh sách phòng
               </Link>
               <Link
-                to="#about"
+                to="/about"
                 className="text-gray-600 hover:text-cmc-600 transition-colors"
               >
                 Giới thiệu
               </Link>
               <Link
-                to="#contact"
+                to="/contact"
                 className="text-gray-600 hover:text-cmc-600 transition-colors"
               >
                 Liên hệ
@@ -80,9 +83,31 @@ const Index = () => {
             </nav>
 
             <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm">
-                Đăng nhập
-              </Button>
+              {user ? (
+                <>
+                  <Link to="/profile">
+                    <Button variant="outline" size="sm">
+                      {user.name}
+                    </Button>
+                  </Link>
+                  {(user.role === "admin" || user.role === "security") && (
+                    <Link to="/dashboard">
+                      <Button size="sm" className="bg-cmc-600 hover:bg-cmc-700">
+                        Dashboard
+                      </Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" size="sm" onClick={logout}>
+                    Đăng xuất
+                  </Button>
+                </>
+              ) : (
+                <Link to="/login">
+                  <Button className="bg-cmcBlue-600 hover:bg-cmcBlue-700">
+                    Đăng nhập
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -473,7 +498,7 @@ const Index = () => {
                 <div>
                   <div className="font-bold text-white">CMC Room Booking</div>
                   <div className="text-xs text-gray-400">
-                    Trường Đại h���c CMC
+                    Trường Đại học CMC
                   </div>
                 </div>
               </div>
