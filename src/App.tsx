@@ -14,6 +14,7 @@ import RoomDetails from "./pages/RoomDetails";
 import BookingForm from "./pages/BookingForm";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import AdminDashboard from "./pages/AdminDashboard";
+import PCTSVDashboard from "./pages/PCTSVDashboard";
 import SecurityCalendar from "./pages/SecurityCalendar";
 import NotFound from "./pages/NotFound";
 
@@ -53,6 +54,8 @@ const DashboardRouter = () => {
   switch (user.role) {
     case "admin":
       return <AdminDashboard />;
+    case "pctsv":
+      return <PCTSVDashboard />;
     case "security":
       return <SecurityCalendar />;
     default:
@@ -111,6 +114,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pctsv"
+              element={
+                <ProtectedRoute requiredRole="pctsv">
+                  <PCTSVDashboard />
                 </ProtectedRoute>
               }
             />
