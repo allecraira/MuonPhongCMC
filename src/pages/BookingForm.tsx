@@ -38,16 +38,49 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
+import { processBookingRequest } from "@/lib/emailService";
+import { useAuth } from "@/lib/auth";
 
 const BookingForm = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date(),
   );
   const [attendeeCount, setAttendeeCount] = useState(2);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmitBooking = () => {
-    navigate("/booking/confirmation");
+  const handleSubmitBooking = async () => {
+    if (!user || !selectedDate) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Process booking with auto-approval system
+      const result = await processBookingRequest({
+        id: Math.random().toString(36).substr(2, 9),
+        roomId: "201",
+        roomName: "Phòng 201",
+        date: format(selectedDate, "yyyy-MM-dd"),
+        time: "08:00 - 10:00", // This would come from form
+        bookerEmail: user.email,
+        bookerName: user.name,
+        purpose: "Họp nhóm dự án", // This would come from form
+        attendees: attendeeCount,
+      });
+
+      if (result.approved) {
+        navigate("/booking/confirmation");
+      } else {
+        // Handle rejection - could show error message
+        alert(`Đặt phòng bị từ chối: ${result.reason}`);
+      }
+    } catch (error) {
+      console.error("Booking submission error:", error);
+      alert("Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -347,9 +380,10 @@ const BookingForm = () => {
                   </Button>
                   <Button
                     onClick={handleSubmitBooking}
+                    disabled={isSubmitting}
                     className="flex-1 bg-gray-900 hover:bg-gray-800"
                   >
-                    Xác nhận đặt phòng
+                    {isSubmitting ? "Đang xử lý..." : "Xác nhận đặt phòng"}
                   </Button>
                 </div>
               </CardContent>
