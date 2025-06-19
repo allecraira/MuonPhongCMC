@@ -237,7 +237,7 @@ const BookingForm = () => {
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {selectedDate ? (
-                          format(selectedDate, "PPP", { locale: vi })
+                          format(selectedDate, "dd/MM/yyyy")
                         ) : (
                           <span>Chọn ngày</span>
                         )}
@@ -372,7 +372,7 @@ const BookingForm = () => {
                 <div>
                   <div className="font-bold text-white">CMC Room Booking</div>
                   <div className="text-xs text-gray-400">
-                    Trường Đ���i học CMC
+                    Trường Đại học CMC
                   </div>
                 </div>
               </div>
