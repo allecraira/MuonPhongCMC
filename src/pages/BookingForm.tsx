@@ -38,7 +38,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
 
 const BookingForm = () => {
   const navigate = useNavigate();
@@ -373,7 +372,7 @@ const BookingForm = () => {
                 <div>
                   <div className="font-bold text-white">CMC Room Booking</div>
                   <div className="text-xs text-gray-400">
-                    Trường Đại học CMC
+                    Trường Đ���i học CMC
                   </div>
                 </div>
               </div>
