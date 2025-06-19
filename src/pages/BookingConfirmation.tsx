@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import {
@@ -27,6 +27,15 @@ import {
 } from "lucide-react";
 
 const BookingConfirmation = () => {
+  const location = useLocation();
+
+  // Get booking data from location state or use default
+  const bookingData = location.state?.bookingData || {
+    roomName: "Phòng 201",
+    roomBuilding: "Tòa CS1",
+    roomFloor: "Tầng 2",
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Header />
@@ -62,8 +71,10 @@ const BookingConfirmation = () => {
               <div className="flex items-center space-x-3">
                 <MapPin className="h-5 w-5 text-gray-400" />
                 <div>
-                  <div className="font-medium">Phòng 201</div>
-                  <div className="text-sm text-gray-600">Tầng 2, Tòa CS1</div>
+                  <div className="font-medium">{bookingData.roomName}</div>
+                  <div className="text-sm text-gray-600">
+                    {bookingData.roomFloor}, {bookingData.roomBuilding}
+                  </div>
                 </div>
               </div>
 
