@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import {
@@ -44,12 +44,38 @@ import { useAuth } from "@/lib/auth";
 
 const BookingForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+
+  // Get room data from location state
+  const room = location.state?.room;
+  const initialDate = location.state?.selectedDate;
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date(),
+    initialDate || new Date(),
   );
   const [attendeeCount, setAttendeeCount] = useState(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if no room data
+  if (!room) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Lỗi đặt phòng</h1>
+            <p className="text-gray-600 mt-2">
+              Không có thông tin phòng để đặt.
+            </p>
+            <Link to="/rooms">
+              <Button className="mt-4">Quay lại danh sách phòng</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmitBooking = async () => {
     if (!user || !selectedDate) return;
@@ -60,8 +86,8 @@ const BookingForm = () => {
       // Process booking with auto-approval system
       const result = await processBookingRequest({
         id: Math.random().toString(36).substr(2, 9),
-        roomId: "201",
-        roomName: "Phòng 201",
+        roomId: room.id,
+        roomName: room.name,
         date: format(selectedDate, "yyyy-MM-dd"),
         time: "08:00 - 10:00", // This would come from form
         bookerEmail: user.email,
@@ -117,16 +143,16 @@ const BookingForm = () => {
             <Card className="sticky top-24">
               <CardHeader className="pb-4">
                 <div className="w-full h-32 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                  <div className="text-gray-400">📷 Phòng 201</div>
+                  <div className="text-gray-400">📷 {room.name}</div>
                 </div>
-                <CardTitle className="text-xl">Phòng 201</CardTitle>
+                <CardTitle className="text-xl">{room.name}</CardTitle>
                 <CardDescription className="flex items-center text-gray-600">
                   <MapPin className="h-4 w-4 mr-1" />
-                  Tầng 2, Tòa CS1
+                  {room.floor}, Tòa {room.building}
                 </CardDescription>
                 <CardDescription className="flex items-center text-gray-600">
                   <Users className="h-4 w-4 mr-1" />
-                  Sức chứa: 50 người
+                  Sức chứa: {room.capacity} người
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -135,21 +161,22 @@ const BookingForm = () => {
                     Thiết bị có sẵn:
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      <Monitor className="h-3 w-3 mr-1" />
-                      Máy chiếu
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      <Wifi className="h-3 w-3 mr-1" />
-                      Micro
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      <Coffee className="h-3 w-3 mr-1" />
-                      Điều hòa
-                    </Badge>
-                    <Badge variant="secondary" className="text-xs">
-                      Hệ thống âm thanh
-                    </Badge>
+                    {room.equipment.map((item, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-xs"
+                      >
+                        {item === "Máy chiếu" && (
+                          <Monitor className="h-3 w-3 mr-1" />
+                        )}
+                        {item === "Wifi" && <Wifi className="h-3 w-3 mr-1" />}
+                        {item === "Điều hòa" && (
+                          <Coffee className="h-3 w-3 mr-1" />
+                        )}
+                        {item}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
               </CardContent>
@@ -395,7 +422,7 @@ const BookingForm = () => {
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li>
                   <Link to="#" className="hover:text-white transition-colors">
-                    Trung t��m trợ giúp
+                    Trung tâm trợ giúp
                   </Link>
                 </li>
                 <li>
