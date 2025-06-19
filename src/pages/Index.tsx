@@ -90,7 +90,9 @@ const Index = () => {
                       {user.name}
                     </Button>
                   </Link>
-                  {(user.role === "admin" || user.role === "security") && (
+                  {(user.role === "admin" ||
+                    user.role === "pctsv" ||
+                    user.role === "security") && (
                     <Link to="/dashboard">
                       <Button size="sm" className="bg-cmc-600 hover:bg-cmc-700">
                         Dashboard
@@ -331,8 +333,8 @@ const Index = () => {
                   Khoa Kinh tế
                 </CardTitle>
                 <CardDescription className="text-base mb-6">
-                  Đào tạo nhân lực kinh tế chất lượng cao trong các lĩnh vụ quản
-                  trị và kinh doanh
+                  Đào tạo nhân lực kinh t�� chất lượng cao trong các lĩnh vụ
+                  quản trị và kinh doanh
                 </CardDescription>
               </CardHeader>
               <CardContent>
