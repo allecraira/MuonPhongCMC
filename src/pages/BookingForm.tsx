@@ -97,7 +97,18 @@ const BookingForm = () => {
       });
 
       if (result.approved) {
-        navigate("/booking/confirmation");
+        navigate("/booking/confirmation", {
+          state: {
+            bookingData: {
+              roomName: room.name,
+              roomBuilding: `Tòa ${room.building}`,
+              roomFloor: room.floor,
+              date: format(selectedDate, "yyyy-MM-dd"),
+              time: "08:00 - 10:00",
+              attendees: attendeeCount,
+            },
+          },
+        });
       } else {
         // Handle rejection - could show error message
         alert(`Đặt phòng bị từ chối: ${result.reason}`);
