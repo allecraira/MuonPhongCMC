@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import {
@@ -31,14 +31,110 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+// Mock room data - in production this would come from MongoDB
+const allRooms = [
+  {
+    id: "201",
+    name: "Phòng 201",
+    building: "CS1",
+    floor: "Tầng 2",
+    capacity: 50,
+    status: "available",
+    equipment: ["Máy chiếu", "Wifi", "Điều hòa"],
+    description:
+      "Phòng học hiện đại với đầy đủ trang thiết bị phục vụ việc học tập và họp nhóm.",
+  },
+  {
+    id: "202",
+    name: "Phòng 202",
+    building: "CS1",
+    floor: "Tầng 2",
+    capacity: 30,
+    status: "booked",
+    equipment: ["Máy chiếu", "Wifi"],
+    description:
+      "Phòng họp nhỏ thích hợp cho các buổi thảo luận nhóm và seminar.",
+  },
+  {
+    id: "301",
+    name: "Phòng 301",
+    building: "CS2",
+    floor: "Tầng 3",
+    capacity: 80,
+    status: "available",
+    equipment: ["Máy chiếu", "Bảng trắng", "Wifi"],
+    description:
+      "Hội trường lớn phù hợp cho các sự kiện, hội thảo và buổi thuyết trình.",
+  },
+  {
+    id: "302",
+    name: "Phòng 302",
+    building: "CS2",
+    floor: "Tầng 3",
+    capacity: 25,
+    status: "available",
+    equipment: ["Máy chiếu", "Wifi"],
+    description:
+      "Phòng lab máy tính với trang thiết bị hiện đại cho thực hành lập trình.",
+  },
+  {
+    id: "401",
+    name: "Phòng 401",
+    building: "CS3",
+    floor: "Tầng 4",
+    capacity: 40,
+    status: "maintenance",
+    equipment: ["Máy chiếu", "Wifi"],
+    description:
+      "Phòng đa năng thích hợp cho các hoạt động học tập và sự kiện sinh viên.",
+  },
+  {
+    id: "402",
+    name: "Phòng 402",
+    building: "CS3",
+    floor: "Tầng 4",
+    capacity: 60,
+    status: "available",
+    equipment: ["Máy chiếu", "Điều hòa", "Wifi"],
+    description:
+      "Phòng học lớn với âm thanh ánh sáng tốt, phù hợp cho các bài giảng.",
+  },
+];
+
 const RoomDetails = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date(),
   );
 
+  // Get room data from location state or find by ID
+  const room = location.state?.room || allRooms.find((r) => r.id === id);
+
+  if (!room) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Không tìm thấy phòng
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Phòng bạn tìm kiếm không tồn tại.
+            </p>
+            <Link to="/rooms">
+              <Button className="mt-4">Quay lại danh sách phòng</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleBookNow = () => {
-    navigate("/booking", { state: { roomId: "201" } });
+    navigate("/booking", { state: { room, selectedDate } });
   };
 
   return (
@@ -63,14 +159,32 @@ const RoomDetails = () => {
             {/* Room Header */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-3xl font-bold text-gray-900">Phòng 201</h1>
-                <Badge className="bg-green-100 text-green-800">Có sẵn</Badge>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {room.name}
+                </h1>
+                <Badge
+                  className={
+                    room.status === "available"
+                      ? "bg-green-100 text-green-800"
+                      : room.status === "booked"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-yellow-100 text-yellow-800"
+                  }
+                >
+                  {room.status === "available"
+                    ? "Có sẵn"
+                    : room.status === "booked"
+                      ? "Đã đặt"
+                      : "Bảo trì"}
+                </Badge>
               </div>
               <div className="flex items-center text-gray-600 mb-4">
                 <MapPin className="h-5 w-5 mr-2" />
-                <span>Tầng 2, Tòa CS1</span>
+                <span>
+                  {room.floor}, Tòa {room.building}
+                </span>
                 <Users className="h-5 w-5 ml-6 mr-2" />
-                <span>50 người</span>
+                <span>{room.capacity} người</span>
               </div>
             </div>
 
@@ -95,13 +209,7 @@ const RoomDetails = () => {
                       <h4 className="font-semibold text-gray-900 mb-3">
                         Mô tả
                       </h4>
-                      <p className="text-gray-600">
-                        Phòng 201 là một không gian hiện đại, được trang bị đầy
-                        đủ tiện nghi phục vụ cho việc học tập và làm việc nhóm.
-                        Phòng có ánh sáng tự nhiên, không gian thoáng đãng và
-                        yên tĩnh, phù hợp cho các hoạt động đào tạo, thảo luận
-                        nhóm và tổ chức các buổi seminar nhỏ.
-                      </p>
+                      <p className="text-gray-600">{room.description}</p>
                     </div>
 
                     <div>
@@ -109,32 +217,36 @@ const RoomDetails = () => {
                         Thiết bị có sẵn
                       </h4>
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-blue-100 rounded-full">
-                            <Monitor className="h-4 w-4 text-blue-600" />
+                        {room.equipment.map((item, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center space-x-3"
+                          >
+                            <div className="p-2 bg-blue-100 rounded-full">
+                              {item === "Máy chiếu" && (
+                                <Monitor className="h-4 w-4 text-blue-600" />
+                              )}
+                              {item === "Wifi" && (
+                                <Wifi className="h-4 w-4 text-green-600" />
+                              )}
+                              {item === "Điều hòa" && (
+                                <Coffee className="h-4 w-4 text-purple-600" />
+                              )}
+                              {item === "Bảng trắng" && (
+                                <CheckCircle className="h-4 w-4 text-orange-600" />
+                              )}
+                              {![
+                                "Máy chiếu",
+                                "Wifi",
+                                "Điều hòa",
+                                "Bảng trắng",
+                              ].includes(item) && (
+                                <CheckCircle className="h-4 w-4 text-gray-600" />
+                              )}
+                            </div>
+                            <span className="text-gray-700">{item}</span>
                           </div>
-                          <span className="text-gray-700">Máy chiếu</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-green-100 rounded-full">
-                            <Wifi className="h-4 w-4 text-green-600" />
-                          </div>
-                          <span className="text-gray-700">Micro không dây</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-purple-100 rounded-full">
-                            <Coffee className="h-4 w-4 text-purple-600" />
-                          </div>
-                          <span className="text-gray-700">Điều hòa</span>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-orange-100 rounded-full">
-                            <CheckCircle className="h-4 w-4 text-orange-600" />
-                          </div>
-                          <span className="text-gray-700">
-                            Hệ thống âm thanh
-                          </span>
-                        </div>
+                        ))}
                       </div>
                     </div>
 
