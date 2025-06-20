@@ -22,7 +22,7 @@ import {
   MessageCircle,
   UserCheck,
   Download,
-  Print,
+  Printer,
 } from "lucide-react";
 
 const BookingConfirmation = () => {
