@@ -259,7 +259,21 @@ const RoomSearch = () => {
                       <div className="absolute top-4 left-4">
                         {getStatusBadge(room.trang_thai)}
                       </div>
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <img
+                        src={`https://images.unsplash.com/photo-${
+                          room.So_phong % 2 === 0
+                            ? "1577412647305-991150c7d163"
+                            : "1562774053-701939374585"
+                        }?w=400&h=240&fit=crop&crop=center`}
+                        alt={`Phòng ${room.So_phong}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          target.nextElementSibling?.classList.remove("hidden");
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-200 hidden">
                         <div className="text-gray-400">📷 Hình ảnh phòng</div>
                       </div>
                     </div>
