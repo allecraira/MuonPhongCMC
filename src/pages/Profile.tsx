@@ -51,7 +51,7 @@ const Profile = () => {
       // Verify current password and update in MongoDB
       const currentUser = await userService.findByEmail(user.email);
 
-      if (!currentUser || currentUser.password !== currentPassword) {
+      if (!currentUser || currentUser.mat_khau !== currentPassword) {
         setError("Mật khẩu hiện tại không đúng");
         return;
       }
