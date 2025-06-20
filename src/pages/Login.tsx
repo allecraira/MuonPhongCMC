@@ -344,6 +344,35 @@ const Login = () => {
                 >
                   Test Direct Login
                 </Button>
+
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="text-xs py-1 h-6 w-full bg-green-50 text-green-700 border-green-300"
+                  onClick={() => {
+                    console.log(
+                      "🚨 EMERGENCY LOGIN - Bypassing authentication",
+                    );
+                    // Emergency login - directly set user without authentication
+                    const emergencyUser = {
+                      id: "emergency",
+                      email: "BIT230372@st.cmc.edu.vn",
+                      name: "Nguyễn Thị Tâm",
+                      role: "student" as const,
+                      studentId: "BIT230372",
+                      hasChangedPassword: false,
+                    };
+
+                    localStorage.setItem(
+                      "auth_user",
+                      JSON.stringify(emergencyUser),
+                    );
+                    alert("🚨 Emergency login successful! Reloading page...");
+                    window.location.reload();
+                  }}
+                >
+                  🚨 Emergency Login
+                </Button>
               </div>
             </div>
           </CardContent>
