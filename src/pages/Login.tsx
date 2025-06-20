@@ -33,14 +33,20 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
+      console.log("📝 Login form submitting:", { email, password });
       const success = await login(email, password);
       if (success) {
+        console.log("🎉 Login form - success, navigating to:", from);
         navigate(from, { replace: true });
       } else {
-        setError("Email hoặc mật khẩu không đúng");
+        console.log("❌ Login form - failed");
+        setError(
+          "Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại thông tin đăng nhập.",
+        );
       }
     } catch (err) {
-      setError("Đã có lỗi xảy ra. Vui lòng thử lại.");
+      console.error("🚨 Login form error:", err);
+      setError("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
     } finally {
       setIsSubmitting(false);
     }
