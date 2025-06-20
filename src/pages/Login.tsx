@@ -89,7 +89,7 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="your-email@cmc.edu.vn"
+                  placeholder="your-email@st.cmc.edu.vn"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
