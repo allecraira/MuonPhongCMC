@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
+import { getCMCUniversityInfo, CMCUniversityInfo } from "@/lib/cmcApi";
 import {
   Card,
   CardContent,
@@ -29,6 +31,39 @@ import {
 } from "lucide-react";
 
 const Index = () => {
+  const [cmcInfo, setCmcInfo] = useState<CMCUniversityInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCMCInfo = async () => {
+      try {
+        const info = await getCMCUniversityInfo();
+        setCmcInfo(info);
+      } catch (error) {
+        console.error("Error loading CMC info:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCMCInfo();
+  }, []);
+
+  // Show loading state
+  if (isLoading || !cmcInfo) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cmc-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Đang tải thông tin trường...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -37,29 +72,28 @@ const Index = () => {
       <section className="bg-gradient-to-br from-cmcBlue-600 via-cmcBlue-700 to-cmcBlue-800 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-            Về Trường Đại học CMC
+            Về {cmcInfo.fullName}
           </h1>
           <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-4xl mx-auto">
-            Trường Đại học CMC - Nơi đào tạo nguồn nhân lực chất lượng cao trong
-            lĩnh vực Công nghệ thông tin và Kinh tế
+            {cmcInfo.description}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
             <div className="text-center">
               <div className="text-4xl md:text-5xl font-bold text-white mb-2">
-                15+
+                {cmcInfo.statistics.yearsOfOperation}+
               </div>
               <div className="text-blue-200">Năm kinh nghiệm</div>
             </div>
             <div className="text-center">
               <div className="text-4xl md:text-5xl font-bold text-white mb-2">
-                10,000+
+                {cmcInfo.statistics.totalStudents.toLocaleString()}+
               </div>
               <div className="text-blue-200">Sinh viên</div>
             </div>
             <div className="text-center">
               <div className="text-4xl md:text-5xl font-bold text-white mb-2">
-                95%
+                {cmcInfo.statistics.employmentRate}%
               </div>
               <div className="text-blue-200">Tỷ lệ có việc làm</div>
             </div>
@@ -77,19 +111,22 @@ const Index = () => {
               </h2>
               <div className="space-y-4 text-gray-600">
                 <p>
-                  Trường Đại học CMC được thành lập vào năm 2009, là một trong
-                  những trường đại học tư thục hàng đầu Việt Nam trong lĩnh vực
-                  đào tạo Công nghệ thông tin và Kinh tế.
+                  {cmcInfo.fullName} được thành lập vào năm{" "}
+                  {cmcInfo.established}, là một trong những trường đại học tư
+                  thục hàng đầu Việt Nam trong lĩnh vực đào tạo Công nghệ thông
+                  tin và Kinh tế.
                 </p>
                 <p>
-                  Với sứ mệnh đào tạo nguồn nhân lực chất lượng cao với đầy đủ
-                  phẩm chất của khoa học công nghệ, CMU luôn không ngừng đổi mới
-                  và nâng cao chất lượng giáo dục.
+                  Với {cmcInfo.statistics.totalStudents.toLocaleString()} sinh
+                  viên và {cmcInfo.statistics.totalTeachers} giảng viên, trường
+                  luôn không ngừng đổi mới và nâng cao chất lượng giáo dục, đạt
+                  tỷ lệ có việc làm {cmcInfo.statistics.employmentRate}% sau tốt
+                  nghiệp.
                 </p>
                 <p>
-                  Trường hiện có 3 khu nhà hiện đại (C5), CS2, CS3) với đầy đủ
-                  trang thiết bị học tập, phòng thí nghiệm và không gian sinh
-                  hoạt cho sinh viên.
+                  Trường hiện có {cmcInfo.facilities.length} khu nhà hiện đại
+                  với đầy đủ trang thiết bị học tập, phòng thí nghiệm và không
+                  gian sinh hoạt cho sinh viên.
                 </p>
               </div>
             </div>
@@ -212,72 +249,51 @@ const Index = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="p-8">
-              <CardHeader>
-                <CardTitle className="text-2xl mb-4 flex items-center">
-                  <BookOpen className="h-8 w-8 text-blue-600 mr-3" />
-                  Khoa Công nghệ thông tin
-                </CardTitle>
-                <CardDescription className="text-base mb-6">
-                  Đào tạo chuyên viên lập trình, kỹ sư phần mềm với đầy đủ kiến
-                  thức và kỹ năng
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="font-semibold mb-2">Kỹ thuật phần mềm</div>
-                    <div className="font-semibold mb-2">Khoa học máy tính</div>
-                    <div className="font-semibold mb-2">An toàn thông tin</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {cmcInfo.faculties.map((faculty, index) => (
+              <Card key={faculty.id} className="p-8">
+                <CardHeader>
+                  <CardTitle className="text-2xl mb-4 flex items-center">
+                    {index === 0 && (
+                      <BookOpen className="h-8 w-8 text-blue-600 mr-3" />
+                    )}
+                    {index === 1 && (
+                      <Calculator className="h-8 w-8 text-green-600 mr-3" />
+                    )}
+                    {index === 2 && (
+                      <GraduationCap className="h-8 w-8 text-purple-600 mr-3" />
+                    )}
+                    {faculty.name}
+                  </CardTitle>
+                  <CardDescription className="text-base mb-6">
+                    {faculty.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-2 text-sm mb-4">
+                    {faculty.majors.slice(0, 4).map((major) => (
+                      <div key={major} className="font-semibold">
+                        • {major}
+                      </div>
+                    ))}
+                    {faculty.majors.length > 4 && (
+                      <div className="text-gray-500">
+                        +{faculty.majors.length - 4} chuyên ngành khác
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <div className="font-semibold mb-2">Hệ thống thông tin</div>
-                    <div className="font-semibold mb-2">Trí tuệ nhân tạo</div>
-                    <div className="font-semibold mb-2">Marketing</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>
+                      <strong>Trưởng khoa:</strong> {faculty.dean}
+                    </p>
+                    <p>
+                      <strong>Sinh viên:</strong>{" "}
+                      {faculty.students.toLocaleString()} sinh viên
+                    </p>
                   </div>
-                </div>
-                <p className="text-sm text-gray-600 mt-4">
-                  Chương trình đào tạo theo tiêu chuẩn quốc tế, tập IC, đối phẩm
-                  ấy dụng về lập trình và phát triển ý tưởng.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-8">
-              <CardHeader>
-                <CardTitle className="text-2xl mb-4 flex items-center">
-                  <Calculator className="h-8 w-8 text-green-600 mr-3" />
-                  Khoa Kinh tế
-                </CardTitle>
-                <CardDescription className="text-base mb-6">
-                  Đào tạo nhân lực kinh tế chất lượng cao trong các lĩnh vụ quản
-                  trị và kinh doanh
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="font-semibold mb-2">
-                      Quản trị kinh doanh
-                    </div>
-                    <div className="font-semibold mb-2">
-                      Tài chính - Ngân hàng
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-semibold mb-2">
-                      Kế toán - Kiểm toán
-                    </div>
-                    <div className="font-semibold mb-2">Kinh tế số</div>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mt-4">
-                  Chương trình đào tạo theo tiêu chuẩn quốc tế, trong tổ hợp các
-                  kỹ năng phân tích, dự đoán và hoạch định kinh tế.
-                </p>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -287,7 +303,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Cơ sở vật chất
+              Cơ sở vật ch���t
             </h2>
           </div>
 
@@ -492,9 +508,10 @@ const Index = () => {
             <div>
               <h3 className="font-semibold mb-4">Liên hệ</h3>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li>📍 Số 236 Hoàng Quốc Việt, Cổ Nhuế, Bắc Từ Liêm, Hà Nội</li>
-                <li>📞 024 3755 6666</li>
-                <li>✉️ support@cmc.edu.vn</li>
+                <li>📍 {cmcInfo.address}</li>
+                <li>📞 {cmcInfo.phone}</li>
+                <li>✉️ {cmcInfo.email}</li>
+                <li>🌐 {cmcInfo.website}</li>
               </ul>
             </div>
           </div>
