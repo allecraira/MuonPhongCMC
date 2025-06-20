@@ -234,7 +234,9 @@ const RoomDetails = () => {
                       <h4 className="font-semibold text-gray-900 mb-3">
                         Mô tả
                       </h4>
-                      <p className="text-gray-600">{room.description}</p>
+                      <p className="text-gray-600">
+                        {room.description || room.Mo_ta}
+                      </p>
                     </div>
 
                     <div>
@@ -248,7 +250,7 @@ const RoomDetails = () => {
                             className="flex items-center space-x-3"
                           >
                             <div className="p-2 bg-blue-100 rounded-full">
-                              {item === "Máy chiếu" && (
+                              {item === "Máy chi���u" && (
                                 <Monitor className="h-4 w-4 text-blue-600" />
                               )}
                               {item === "Wifi" && (
