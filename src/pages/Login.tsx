@@ -131,7 +131,7 @@ const Login = () => {
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                ��ăng nhập
+                Đăng nhập
               </Button>
             </form>
           </CardContent>
@@ -144,10 +144,10 @@ const Login = () => {
           </CardHeader>
           <CardContent className="text-xs space-y-2">
             <div>
-              <strong>Sinh viên:</strong> student1@cmc.edu.vn / 123456
+              <strong>Sinh viên:</strong> BIT230372@st.cmc.edu.vn / 123456
             </div>
             <div>
-              <strong>Giảng viên:</strong> teacher1@cmc.edu.vn / 123456
+              <strong>Giảng viên:</strong> teacher1@st.cmc.edu.vn / 123456
             </div>
             <div>
               <strong>Admin:</strong> admin@cmc.edu.vn / 123456
