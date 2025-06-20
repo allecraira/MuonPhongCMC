@@ -23,27 +23,52 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(true);
 
     try {
-      console.log("🔐 Attempting login for:", email);
+      console.log(
+        "🔐 Attempting login for:",
+        email,
+        "with password:",
+        password,
+      );
 
       // Find user in MongoDB
       const mongoUser = await userService.findByEmail(email);
 
-      if (mongoUser && mongoUser.mat_khau === password) {
-        // Convert MongoDB user to app user format
-        const appUser: User = {
-          id: mongoUser._id || mongoUser.email,
-          email: mongoUser.email,
-          name: mongoUser.ten_nguoi_dung,
-          role: mongoUser.vai_tro || "student",
-          studentId: mongoUser.ma_nguoi_dung,
-          hasChangedPassword: mongoUser.mat_khau !== "123456",
-        };
+      console.log("👤 Found user:", mongoUser);
 
-        setUser(appUser);
-        localStorage.setItem("auth_user", JSON.stringify(appUser));
-        console.log("✅ Login successful for:", email);
-        setIsLoading(false);
-        return true;
+      if (mongoUser) {
+        console.log(
+          "🔑 Password check - Input:",
+          password,
+          "Stored:",
+          mongoUser.mat_khau,
+        );
+
+        if (mongoUser.mat_khau === password) {
+          // Convert MongoDB user to app user format
+          const appUser: User = {
+            id: mongoUser._id || mongoUser.email,
+            email: mongoUser.email,
+            name: mongoUser.ten_nguoi_dung,
+            role: mongoUser.vai_tro || "student",
+            studentId: mongoUser.ma_nguoi_dung,
+            hasChangedPassword: mongoUser.mat_khau !== "123456",
+          };
+
+          setUser(appUser);
+          localStorage.setItem("auth_user", JSON.stringify(appUser));
+          console.log(
+            "✅ Login successful for:",
+            email,
+            "User role:",
+            appUser.role,
+          );
+          setIsLoading(false);
+          return true;
+        } else {
+          console.log("❌ Password mismatch for:", email);
+        }
+      } else {
+        console.log("❌ No user found for email:", email);
       }
 
       console.log("❌ Login failed for:", email);
