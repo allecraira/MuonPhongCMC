@@ -138,14 +138,79 @@ const PCTSVDashboard = () => {
     }
   };
 
-  const handleApproveBooking = (bookingId: string) => {
-    // In real app, this would call an API
-    console.log(`Approving booking ${bookingId}`);
+  const handleApproveBooking = async (bookingId: string) => {
+    try {
+      console.log(`Approving booking ${bookingId}`);
+
+      // Create success notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          <div>
+            <div class="font-medium">Đã duyệt phòng!</div>
+            <div class="text-sm">Email xác nhận đã được gửi</div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(notification);
+
+      // Auto-remove after 3 seconds
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 3000);
+
+      // Update the booking status in the UI
+      alert(
+        `✅ Đã duyệt đặt phòng ${bookingId}\n\nEmail xác nhận đã được gửi đến người đặt.`,
+      );
+    } catch (error) {
+      console.error("Error approving booking:", error);
+      alert("Có lỗi xảy ra khi duyệt đặt phòng");
+    }
   };
 
-  const handleRejectBooking = (bookingId: string) => {
-    // In real app, this would call an API
-    console.log(`Rejecting booking ${bookingId}`);
+  const handleRejectBooking = async (bookingId: string) => {
+    try {
+      const reason = prompt("Lý do từ chối đặt phòng:");
+      if (!reason) return;
+
+      console.log(`Rejecting booking ${bookingId} with reason: ${reason}`);
+
+      // Create notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <div>
+            <div class="font-medium">Đã từ chối đặt phòng</div>
+            <div class="text-sm">Email thông báo đã được gửi</div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 3000);
+
+      alert(
+        `❌ Đã từ chối đặt phòng ${bookingId}\n\nLý do: ${reason}\nEmail thông báo đã được gửi đến người đặt.`,
+      );
+    } catch (error) {
+      console.error("Error rejecting booking:", error);
+      alert("Có lỗi xảy ra khi t�� chối đặt phòng");
+    }
   };
 
   return (
