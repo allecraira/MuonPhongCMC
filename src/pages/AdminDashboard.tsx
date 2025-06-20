@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import EmailTestDialog from "@/components/EmailTestDialog";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import {
+  userService,
+  roomService,
+  bookingService,
+  MongoUser,
+  MongoRoom,
+  MongoBookingHistory,
+} from "@/lib/mongodb";
+import {
   Users,
   Building2,
   Calendar,
@@ -41,63 +49,106 @@ import {
   Trash2,
   Shield,
   ArrowLeft,
+  Mail,
+  Phone,
+  Hash,
+  Loader2,
 } from "lucide-react";
-
-// Mock data
-const systemStats = {
-  totalUsers: 1247,
-  activeBookings: 23,
-  totalRooms: 15,
-  monthlyBookings: 342,
-};
-
-const mockUsers = [
-  {
-    id: "1",
-    name: "Nguyễn Văn A",
-    email: "student1@cmc.edu.vn",
-    role: "student",
-    status: "active",
-    lastLogin: "2025-01-17",
-  },
-  {
-    id: "2",
-    name: "TS. Trần Thị B",
-    email: "teacher1@cmc.edu.vn",
-    role: "teacher",
-    status: "active",
-    lastLogin: "2025-01-16",
-  },
-  {
-    id: "3",
-    name: "Lê Văn C",
-    email: "pctsv@cmc.edu.vn",
-    role: "pctsv",
-    status: "active",
-    lastLogin: "2025-01-17",
-  },
-];
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [users, setUsers] = useState<MongoUser[]>([]);
+  const [rooms, setRooms] = useState<MongoRoom[]>([]);
+  const [bookings, setBookings] = useState<MongoBookingHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<MongoUser | null>(null);
   const [showUserDialog, setShowUserDialog] = useState(false);
 
-  const getRoleBadge = (role: string) => {
-    const roleConfig = {
-      student: { label: "Sinh viên", color: "bg-blue-100 text-blue-800" },
-      teacher: { label: "Giảng viên", color: "bg-green-100 text-green-800" },
-      admin: { label: "Admin", color: "bg-red-100 text-red-800" },
-      pctsv: { label: "PCTSV", color: "bg-purple-100 text-purple-800" },
-      security: { label: "Bảo vệ", color: "bg-orange-100 text-orange-800" },
+  // Load all data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        console.log("📊 Loading admin dashboard data...");
+
+        const [usersData, roomsData, bookingsData] = await Promise.all([
+          userService.getAllUsers(),
+          roomService.getAllRooms(),
+          bookingService.getAllBookings(),
+        ]);
+
+        setUsers(usersData);
+        setRooms(roomsData);
+        setBookings(bookingsData);
+
+        console.log("✅ Admin data loaded:", {
+          users: usersData.length,
+          rooms: roomsData.length,
+          bookings: bookingsData.length,
+        });
+      } catch (error) {
+        console.error("❌ Error loading admin data:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    const config = roleConfig[role as keyof typeof roleConfig];
-    return (
-      <Badge className={config?.color || "bg-gray-100 text-gray-800"}>
-        {config?.label || role}
-      </Badge>
-    );
+
+    loadData();
+  }, []);
+
+  const getRoleName = (role?: string) => {
+    switch (role) {
+      case "student":
+        return "Sinh viên";
+      case "teacher":
+        return "Giảng viên";
+      case "admin":
+        return "Quản trị viên";
+      case "pctsv":
+        return "Phòng CTSV";
+      case "security":
+        return "Bảo vệ";
+      default:
+        return "Không xác định";
+    }
   };
+
+  const getRoleBadgeColor = (role?: string) => {
+    switch (role) {
+      case "student":
+        return "bg-blue-100 text-blue-800";
+      case "teacher":
+        return "bg-green-100 text-green-800";
+      case "admin":
+        return "bg-purple-100 text-purple-800";
+      case "pctsv":
+        return "bg-orange-100 text-orange-800";
+      case "security":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const systemStats = {
+    totalUsers: users.length,
+    activeBookings: bookings.filter((b) => b.trang_thai === "confirmed").length,
+    totalRooms: rooms.length,
+    pendingApprovals: bookings.filter((b) => b.trang_thai === "pending").length,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto" />
+            <p className="mt-4 text-gray-600">Đang tải dữ liệu quản trị...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -107,8 +158,8 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-red-100 rounded-full">
-                  <Shield className="h-6 w-6 text-red-600" />
+                <div className="p-2 bg-purple-100 rounded-full">
+                  <Shield className="h-6 w-6 text-purple-600" />
                 </div>
                 <div className="text-left">
                   <div className="text-lg font-bold text-gray-900">
@@ -120,7 +171,6 @@ const AdminDashboard = () => {
             </div>
 
             <div className="flex items-center space-x-3">
-              <EmailTestDialog />
               <div className="text-sm text-gray-600">
                 Xin chào, {user?.name}
               </div>
@@ -148,7 +198,7 @@ const AdminDashboard = () => {
             Bảng điều khiển Admin
           </h1>
           <p className="text-gray-600">
-            Quản lý người dùng, hệ thống và theo dõi hoạt động
+            Quản lý người dùng, phòng học và thống kê hệ thống
           </p>
         </div>
 
@@ -158,12 +208,15 @@ const AdminDashboard = () => {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
                 <span className="text-sm font-medium">Tổng người dùng</span>
-                <Users className="h-4 w-4 text-blue-600" />
+                <Users className="h-4 w-4 text-purple-600" />
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{systemStats.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">+12 tháng này</p>
+              <p className="text-xs text-muted-foreground">
+                {users.filter((u) => u.vai_tro === "student").length} sinh viên,{" "}
+                {users.filter((u) => u.vai_tro === "teacher").length} giảng viên
+              </p>
             </CardContent>
           </Card>
 
@@ -178,37 +231,38 @@ const AdminDashboard = () => {
               <div className="text-2xl font-bold">
                 {systemStats.activeBookings}
               </div>
-              <p className="text-xs text-muted-foreground">Hiện tại</p>
+              <p className="text-xs text-muted-foreground">Đã xác nhận</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
-                <span className="text-sm font-medium">Tổng số phòng</span>
-                <Building2 className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium">Tổng phòng</span>
+                <Building2 className="h-4 w-4 text-blue-600" />
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{systemStats.totalRooms}</div>
-              <p className="text-xs text-muted-foreground">3 tòa nhà</p>
+              <p className="text-xs text-muted-foreground">
+                {rooms.filter((r) => r.trang_thai === "available").length} có
+                sẵn
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
-                <span className="text-sm font-medium">Đặt phòng/tháng</span>
+                <span className="text-sm font-medium">Chờ duyệt</span>
                 <BarChart3 className="h-4 w-4 text-orange-600" />
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {systemStats.monthlyBookings}
+                {systemStats.pendingApprovals}
               </div>
-              <p className="text-xs text-muted-foreground">
-                +8% so với tháng trước
-              </p>
+              <p className="text-xs text-muted-foreground">Yêu cầu đặt phòng</p>
             </CardContent>
           </Card>
         </div>
@@ -218,7 +272,7 @@ const AdminDashboard = () => {
           <TabsList>
             <TabsTrigger value="users">Quản lý người dùng</TabsTrigger>
             <TabsTrigger value="system">Cài đặt hệ thống</TabsTrigger>
-            <TabsTrigger value="logs">Nhật ký hoạt động</TabsTrigger>
+            <TabsTrigger value="statistics">Thống kê</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -228,7 +282,7 @@ const AdminDashboard = () => {
                   <div>
                     <CardTitle>Quản lý người dùng</CardTitle>
                     <CardDescription>
-                      Xem và quản lý tài khoản người dùng trong hệ thống
+                      Xem và quản lý tất cả người dùng trong hệ thống
                     </CardDescription>
                   </div>
                   <Dialog>
@@ -242,33 +296,40 @@ const AdminDashboard = () => {
                       <DialogHeader>
                         <DialogTitle>Thêm người dùng mới</DialogTitle>
                         <DialogDescription>
-                          Tạo tài khoản người dùng mới trong hệ thống
+                          Nhập thông tin người dùng mới
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Họ và tên</Label>
-                          <Input id="name" placeholder="Nhập họ và tên" />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="user-name">Họ và tên</Label>
+                            <Input id="user-name" placeholder="Nguyễn Văn A" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="user-email">Email</Label>
+                            <Input
+                              id="user-email"
+                              placeholder="user@st.cmc.edu.vn"
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="user@cmc.edu.vn"
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="user-role">Vai trò</Label>
+                            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                              <option value="student">Sinh viên</option>
+                              <option value="teacher">Giảng viên</option>
+                              <option value="admin">Quản trị viên</option>
+                              <option value="pctsv">PCTSV</option>
+                              <option value="security">Bảo vệ</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="user-phone">Số điện thoại</Label>
+                            <Input id="user-phone" placeholder="0123456789" />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="role">Vai trò</Label>
-                          <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                            <option value="student">Sinh viên</option>
-                            <option value="teacher">Giảng viên</option>
-                            <option value="pctsv">PCTSV</option>
-                            <option value="security">Bảo vệ</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        </div>
-                        <Button className="w-full">Tạo tài khoản</Button>
+                        <Button className="w-full">Tạo người dùng</Button>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -281,32 +342,34 @@ const AdminDashboard = () => {
                       <TableHead>Tên</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Vai trò</TableHead>
-                      <TableHead>Trạng thái</TableHead>
-                      <TableHead>Đăng nhập cuối</TableHead>
+                      <TableHead>Mã</TableHead>
+                      <TableHead>Điện thoại</TableHead>
                       <TableHead>Hành động</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockUsers.map((user) => (
-                      <TableRow key={user.id}>
+                    {users.map((userData) => (
+                      <TableRow key={userData._id}>
                         <TableCell className="font-medium">
-                          {user.name}
+                          {userData.ten_nguoi_dung}
                         </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell>{userData.email}</TableCell>
                         <TableCell>
-                          <Badge className="bg-green-100 text-green-800">
-                            Hoạt động
+                          <Badge
+                            className={getRoleBadgeColor(userData.vai_tro)}
+                          >
+                            {getRoleName(userData.vai_tro)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{user.lastLogin}</TableCell>
+                        <TableCell>{userData.ma_nguoi_dung}</TableCell>
+                        <TableCell>{userData.so_dien_thoai}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                setSelectedUser(user);
+                                setSelectedUser(userData);
                                 setShowUserDialog(true);
                               }}
                             >
@@ -331,99 +394,133 @@ const AdminDashboard = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Settings className="h-5 w-5 mr-2" />
-                    Cài đặt chung
+                    Cài đặt email
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Tên hệ thống</Label>
-                    <Input defaultValue="CMC Room Booking System" />
+                <CardContent>
+                  <div className="space-y-4">
+                    <EmailTestDialog />
+                    <div className="text-sm text-gray-600">
+                      Kiểm tra và cấu hình hệ thống email tự động
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Email thông báo</Label>
-                    <Input defaultValue="admin@cmc.edu.vn" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Thời gian đặt phòng tối đa (giờ)</Label>
-                    <Input defaultValue="4" type="number" />
-                  </div>
-                  <Button>Lưu cài đặt</Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Building2 className="h-5 w-5 mr-2" />
-                    Quản lý cơ sở dữ liệu
-                  </CardTitle>
+                  <CardTitle>Cài đặt hệ thống</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-sm text-gray-600">
-                    <p>Kết nối MongoDB: ✅ Hoạt động</p>
-                    <p>Phiên bản: 7.0.5</p>
-                    <p>Dung lượng sử dụng: 245 MB / 1 GB</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full">
-                      Sao lưu dữ liệu
-                    </Button>
-                    <Button variant="outline" className="w-full">
-                      Khôi phục dữ liệu
-                    </Button>
-                    <Button variant="outline" className="w-full">
-                      Dọn dẹp log cũ
-                    </Button>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Tự động duyệt đặt phòng</span>
+                      <Badge className="bg-green-100 text-green-800">Bật</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Gửi email thông báo</span>
+                      <Badge className="bg-green-100 text-green-800">Bật</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Backup tự động</span>
+                      <Badge className="bg-blue-100 text-blue-800">
+                        Hàng ngày
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          <TabsContent value="logs">
-            <Card>
-              <CardHeader>
-                <CardTitle>Nhật ký hoạt động hệ thống</CardTitle>
-                <CardDescription>
-                  Theo dõi các hoạt động quan trọng trong hệ thống
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="border-l-4 border-blue-500 pl-4 py-2">
-                    <div className="text-sm font-medium">
-                      Người dùng đăng nhập
+          <TabsContent value="statistics">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Thống kê người dùng theo vai trò</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {["student", "teacher", "admin", "pctsv", "security"].map(
+                      (role) => {
+                        const count = users.filter(
+                          (u) => u.vai_tro === role,
+                        ).length;
+                        const percentage =
+                          users.length > 0 ? (count / users.length) * 100 : 0;
+
+                        return (
+                          <div
+                            key={role}
+                            className="flex justify-between items-center"
+                          >
+                            <span className="text-sm">{getRoleName(role)}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-32 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-purple-600 h-2 rounded-full"
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm text-gray-600 w-12">
+                                {count}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Thống kê đặt phòng</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-blue-600">
+                        {bookings.length}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Tổng số đặt phòng
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-600">
-                      student1@cmc.edu.vn đăng nhập lúc 14:30, 17/01/2025
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-xl font-semibold text-green-600">
+                          {
+                            bookings.filter((b) => b.trang_thai === "confirmed")
+                              .length
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">Đã duyệt</div>
+                      </div>
+                      <div>
+                        <div className="text-xl font-semibold text-yellow-600">
+                          {
+                            bookings.filter((b) => b.trang_thai === "pending")
+                              .length
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">Chờ duyệt</div>
+                      </div>
+                      <div>
+                        <div className="text-xl font-semibold text-red-600">
+                          {
+                            bookings.filter((b) => b.trang_thai === "cancelled")
+                              .length
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">Đã hủy</div>
+                      </div>
                     </div>
                   </div>
-                  <div className="border-l-4 border-green-500 pl-4 py-2">
-                    <div className="text-sm font-medium">Đặt phòng mới</div>
-                    <div className="text-xs text-gray-600">
-                      Phòng 201 được đặt bởi teacher1@cmc.edu.vn lúc 14:25,
-                      17/01/2025
-                    </div>
-                  </div>
-                  <div className="border-l-4 border-orange-500 pl-4 py-2">
-                    <div className="text-sm font-medium">Cập nhật hệ thống</div>
-                    <div className="text-xs text-gray-600">
-                      Admin cập nhật cài đặt email thông báo lúc 14:20,
-                      17/01/2025
-                    </div>
-                  </div>
-                  <div className="border-l-4 border-red-500 pl-4 py-2">
-                    <div className="text-sm font-medium">
-                      Đăng nhập thất bại
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      Thử đăng nhập với email unknown@cmc.edu.vn lúc 14:15,
-                      17/01/2025
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
@@ -433,42 +530,45 @@ const AdminDashboard = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chỉnh sửa người dùng</DialogTitle>
-            <DialogDescription>
-              Cập nhật thông tin tài khoản người dùng
-            </DialogDescription>
+            <DialogDescription>Cập nhật thông tin người dùng</DialogDescription>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Họ và tên</Label>
-                <Input
-                  id="edit-name"
-                  defaultValue={selectedUser.name}
-                  placeholder="Nhập họ và tên"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Họ và tên</Label>
+                  <Input
+                    id="edit-name"
+                    defaultValue={selectedUser.ten_nguoi_dung}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input id="edit-email" defaultValue={selectedUser.email} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-email">Email</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  defaultValue={selectedUser.email}
-                  placeholder="user@cmc.edu.vn"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-role">Vai trò</Label>
-                <select
-                  id="edit-role"
-                  defaultValue={selectedUser.role}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="student">Sinh viên</option>
-                  <option value="teacher">Giảng viên</option>
-                  <option value="pctsv">PCTSV</option>
-                  <option value="security">Bảo vệ</option>
-                  <option value="admin">Admin</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-role">Vai trò</Label>
+                  <select
+                    id="edit-role"
+                    defaultValue={selectedUser.vai_tro}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="student">Sinh viên</option>
+                    <option value="teacher">Giảng viên</option>
+                    <option value="admin">Quản trị viên</option>
+                    <option value="pctsv">PCTSV</option>
+                    <option value="security">Bảo vệ</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Số điện thoại</Label>
+                  <Input
+                    id="edit-phone"
+                    defaultValue={selectedUser.so_dien_thoai}
+                  />
+                </div>
               </div>
               <div className="flex space-x-2">
                 <Button className="flex-1">Lưu thay đổi</Button>
