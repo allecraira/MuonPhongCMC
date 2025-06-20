@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +31,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import {
+  roomService,
+  bookingService,
+  MongoRoom,
+  MongoBookingHistory,
+} from "@/lib/mongodb";
+import {
+  sendBookingConfirmation,
+  sendBookingRejection,
+} from "@/lib/emailService";
+import {
   Building2,
   Calendar,
   BarChart3,
@@ -43,85 +53,59 @@ import {
   Clock,
   ArrowLeft,
   Shield,
+  Loader2,
 } from "lucide-react";
-
-// Mock data
-const roomStats = {
-  totalRooms: 15,
-  availableRooms: 12,
-  bookedRooms: 3,
-  monthlyBookings: 342,
-};
-
-const mockRooms = [
-  {
-    id: "201",
-    name: "Phòng 201",
-    building: "CS1",
-    floor: 2,
-    capacity: 50,
-    equipment: ["Máy chiếu", "Wifi", "Điều hòa"],
-    status: "active",
-  },
-  {
-    id: "202",
-    name: "Phòng 202",
-    building: "CS1",
-    floor: 2,
-    capacity: 30,
-    equipment: ["Máy chiếu", "Wifi"],
-    status: "active",
-  },
-  {
-    id: "301",
-    name: "Phòng 301",
-    building: "CS2",
-    floor: 3,
-    capacity: 80,
-    equipment: ["Máy chiếu", "Bảng trắng", "Wifi"],
-    status: "active",
-  },
-];
-
-const mockBookings = [
-  {
-    id: "1",
-    room: "Phòng 201",
-    booker: "Nguyễn Văn A",
-    date: "2025-01-17",
-    time: "08:00 - 10:00",
-    status: "confirmed",
-    purpose: "Họp nhóm dự án",
-    attendees: 15,
-  },
-  {
-    id: "2",
-    room: "Phòng 202",
-    booker: "TS. Trần Thị B",
-    date: "2025-01-17",
-    time: "10:00 - 12:00",
-    status: "pending",
-    purpose: "Lớp học Lập trình Java",
-    attendees: 30,
-  },
-  {
-    id: "3",
-    room: "Phòng 301",
-    booker: "Lê Văn C",
-    date: "2025-01-18",
-    time: "14:00 - 16:00",
-    status: "confirmed",
-    purpose: "Thực hành máy tính",
-    attendees: 25,
-  },
-];
 
 const PCTSVDashboard = () => {
   const { user, logout } = useAuth();
-  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [rooms, setRooms] = useState<MongoRoom[]>([]);
+  const [bookings, setBookings] = useState<MongoBookingHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedRoom, setSelectedRoom] = useState<MongoRoom | null>(null);
   const [showRoomDialog, setShowRoomDialog] = useState(false);
   const [showBookingDialog, setShowBookingDialog] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedBooking, setSelectedBooking] =
+    useState<MongoBookingHistory | null>(null);
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        console.log("📊 Loading PCTSV dashboard data...");
+
+        const [roomsData, bookingsData] = await Promise.all([
+          roomService.getAllRooms(),
+          bookingService.getAllBookings(),
+        ]);
+
+        setRooms(roomsData);
+        setBookings(bookingsData);
+
+        console.log("✅ PCTSV data loaded:", {
+          rooms: roomsData.length,
+          bookings: bookingsData.length,
+        });
+      } catch (error) {
+        console.error("❌ Error loading PCTSV data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const parseEquipment = (equipmentString: string): string[] => {
+    try {
+      const cleaned = equipmentString.replace(/'/g, '"');
+      return JSON.parse(cleaned);
+    } catch {
+      return equipmentString
+        .split(",")
+        .map((item) => item.trim().replace(/[\[\]']/g, ""));
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -138,80 +122,151 @@ const PCTSVDashboard = () => {
     }
   };
 
-  const handleApproveBooking = async (bookingId: string) => {
+  const handleApproveBooking = async (booking: MongoBookingHistory) => {
     try {
-      console.log(`Approving booking ${bookingId}`);
+      console.log(`Approving booking ${booking._id}`);
 
-      // Create success notification
-      const notification = document.createElement("div");
-      notification.className =
-        "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
-      notification.innerHTML = `
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-          </svg>
-          <div>
-            <div class="font-medium">Đã duyệt phòng!</div>
-            <div class="text-sm">Email xác nhận đã được gửi</div>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(notification);
-
-      // Auto-remove after 3 seconds
-      setTimeout(() => {
-        document.body.removeChild(notification);
-      }, 3000);
-
-      // Update the booking status in the UI
-      alert(
-        `✅ Đã duyệt đặt phòng ${bookingId}\n\nEmail xác nhận đã được gửi đến người đặt.`,
+      // Update booking status in database
+      const success = await bookingService.updateBookingStatus(
+        booking._id!,
+        "confirmed",
       );
+
+      if (success) {
+        // Send confirmation email
+        await sendBookingConfirmation({
+          id: booking._id!,
+          roomName: `Phòng ${booking.Ma_phong}`,
+          bookerName: booking.Ten_nguoi_dung,
+          bookerEmail: booking.Email,
+          date: booking.Ngay,
+          time: booking.Ca,
+          purpose: booking.Ly_do,
+          attendees: 0, // We don't have this data in MongoDB structure
+        });
+
+        // Update local state
+        setBookings((prev) =>
+          prev.map((b) =>
+            b._id === booking._id
+              ? { ...b, trang_thai: "confirmed" as const }
+              : b,
+          ),
+        );
+
+        // Create success notification
+        const notification = document.createElement("div");
+        notification.className =
+          "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
+        notification.innerHTML = `
+          <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <div>
+              <div class="font-medium">Đã duyệt phòng!</div>
+              <div class="text-sm">Email xác nhận đã được gửi</div>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 3000);
+
+        console.log(`✅ Booking ${booking._id} approved successfully`);
+      }
     } catch (error) {
       console.error("Error approving booking:", error);
       alert("Có lỗi xảy ra khi duyệt đặt phòng");
     }
   };
 
-  const handleRejectBooking = async (bookingId: string) => {
+  const handleRejectBooking = async (booking: MongoBookingHistory) => {
     try {
       const reason = prompt("Lý do từ chối đặt phòng:");
       if (!reason) return;
 
-      console.log(`Rejecting booking ${bookingId} with reason: ${reason}`);
+      console.log(`Rejecting booking ${booking._id} with reason: ${reason}`);
 
-      // Create notification
-      const notification = document.createElement("div");
-      notification.className =
-        "fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
-      notification.innerHTML = `
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-          </svg>
-          <div>
-            <div class="font-medium">Đã từ chối đặt phòng</div>
-            <div class="text-sm">Email thông báo đã được gửi</div>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(notification);
-
-      setTimeout(() => {
-        document.body.removeChild(notification);
-      }, 3000);
-
-      alert(
-        `❌ Đã từ chối đặt phòng ${bookingId}\n\nLý do: ${reason}\nEmail thông báo đã được gửi đến người đặt.`,
+      // Update booking status in database
+      const success = await bookingService.updateBookingStatus(
+        booking._id!,
+        "cancelled",
       );
+
+      if (success) {
+        // Send rejection email
+        await sendBookingRejection({
+          id: booking._id!,
+          roomName: `Phòng ${booking.Ma_phong}`,
+          bookerName: booking.Ten_nguoi_dung,
+          bookerEmail: booking.Email,
+          reason,
+        });
+
+        // Update local state
+        setBookings((prev) =>
+          prev.map((b) =>
+            b._id === booking._id
+              ? { ...b, trang_thai: "cancelled" as const }
+              : b,
+          ),
+        );
+
+        // Create notification
+        const notification = document.createElement("div");
+        notification.className =
+          "fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
+        notification.innerHTML = `
+          <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+            </svg>
+            <div>
+              <div class="font-medium">Đã từ chối đặt phòng</div>
+              <div class="text-sm">Email thông báo đã được gửi</div>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 3000);
+
+        console.log(`❌ Booking ${booking._id} rejected successfully`);
+      }
     } catch (error) {
       console.error("Error rejecting booking:", error);
-      alert("Có lỗi xảy ra khi t�� chối đặt phòng");
+      alert("Có lỗi xảy ra khi từ chối đặt phòng");
     }
   };
+
+  // Calculate room stats
+  const roomStats = {
+    totalRooms: rooms.length,
+    availableRooms: rooms.filter((r) => r.trang_thai === "available").length,
+    bookedRooms: rooms.filter((r) => r.trang_thai === "booked").length,
+    monthlyBookings: bookings.length,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto" />
+            <p className="mt-4 text-gray-600">Đang tải dữ liệu PCTSV...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -276,7 +331,9 @@ const PCTSVDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{roomStats.totalRooms}</div>
-              <p className="text-xs text-muted-foreground">3 tòa nhà</p>
+              <p className="text-xs text-muted-foreground">
+                {[...new Set(rooms.map((r) => r.Co_so))].length} tòa nhà
+              </p>
             </CardContent>
           </Card>
 
@@ -291,7 +348,7 @@ const PCTSVDashboard = () => {
               <div className="text-2xl font-bold">
                 {roomStats.availableRooms}
               </div>
-              <p className="text-xs text-muted-foreground">Hiện tại</p>
+              <p className="text-xs text-muted-foreground">Có thể đặt</p>
             </CardContent>
           </Card>
 
@@ -311,7 +368,7 @@ const PCTSVDashboard = () => {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
-                <span className="text-sm font-medium">Đặt phòng/tháng</span>
+                <span className="text-sm font-medium">Đặt phòng</span>
                 <BarChart3 className="h-4 w-4 text-orange-600" />
               </CardTitle>
             </CardHeader>
@@ -320,7 +377,8 @@ const PCTSVDashboard = () => {
                 {roomStats.monthlyBookings}
               </div>
               <p className="text-xs text-muted-foreground">
-                +12% so với tháng trước
+                {bookings.filter((b) => b.trang_thai === "pending").length} chờ
+                duyệt
               </p>
             </CardContent>
           </Card>
@@ -341,7 +399,7 @@ const PCTSVDashboard = () => {
                   <div>
                     <CardTitle>Quản lý phòng học</CardTitle>
                     <CardDescription>
-                      Thêm, sửa, xóa thông tin phòng và trang thiết bị
+                      Xem và quản lý thông tin phòng học trong hệ thống
                     </CardDescription>
                   </div>
                   <Dialog>
@@ -361,29 +419,33 @@ const PCTSVDashboard = () => {
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="room-name">Tên phòng</Label>
-                            <Input id="room-name" placeholder="Phòng 101" />
+                            <Label htmlFor="room-number">Số phòng</Label>
+                            <Input
+                              id="room-number"
+                              placeholder="202"
+                              type="number"
+                            />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="building">Tòa nhà</Label>
                             <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                              <option value="CS1">Tòa CS1</option>
-                              <option value="CS2">Tòa CS2</option>
-                              <option value="CS3">Tòa CS3</option>
+                              <option value="VPC1">Tòa VPC1</option>
+                              <option value="VPC2">Tòa VPC2</option>
+                              <option value="VPC3">Tòa VPC3</option>
                             </select>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="floor">Tầng</Label>
-                            <Input id="floor" type="number" placeholder="1" />
+                            <Label htmlFor="area">Diện tích (m²)</Label>
+                            <Input id="area" type="number" placeholder="45" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="capacity">Sức chứa</Label>
                             <Input
                               id="capacity"
                               type="number"
-                              placeholder="30"
+                              placeholder="50"
                             />
                           </div>
                         </div>
@@ -393,6 +455,14 @@ const PCTSVDashboard = () => {
                             id="equipment"
                             placeholder="Máy chiếu, Wifi, Điều hòa..."
                             rows={3}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="description">Mô tả</Label>
+                          <Textarea
+                            id="description"
+                            placeholder="Mô tả chi tiết về phòng học..."
+                            rows={2}
                           />
                         </div>
                         <Button className="w-full">Thêm phòng</Button>
@@ -407,7 +477,7 @@ const PCTSVDashboard = () => {
                     <TableRow>
                       <TableHead>Phòng</TableHead>
                       <TableHead>Tòa nhà</TableHead>
-                      <TableHead>Tầng</TableHead>
+                      <TableHead>Diện tích</TableHead>
                       <TableHead>Sức chứa</TableHead>
                       <TableHead>Trang thiết bị</TableHead>
                       <TableHead>Trạng thái</TableHead>
@@ -415,56 +485,71 @@ const PCTSVDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockRooms.map((room) => (
-                      <TableRow key={room.id}>
-                        <TableCell className="font-medium">
-                          {room.name}
-                        </TableCell>
-                        <TableCell>Tòa {room.building}</TableCell>
-                        <TableCell>Tầng {room.floor}</TableCell>
-                        <TableCell>{room.capacity} người</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {room.equipment.slice(0, 2).map((item, index) => (
-                              <Badge
-                                key={index}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {item}
-                              </Badge>
-                            ))}
-                            {room.equipment.length > 2 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{room.equipment.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-green-100 text-green-800">
-                            Hoạt động
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedRoom(room);
-                                setShowRoomDialog(true);
-                              }}
+                    {rooms.map((room) => {
+                      const equipment = parseEquipment(room.Co_so_vat_chat);
+                      return (
+                        <TableRow key={room._id}>
+                          <TableCell className="font-medium">
+                            Phòng {room.So_phong}
+                          </TableCell>
+                          <TableCell>Tòa {room.Co_so}</TableCell>
+                          <TableCell>{room["Dien_tich (m2)"]}m²</TableCell>
+                          <TableCell>{room.Suc_chua} người</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {equipment.slice(0, 2).map((item, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
+                                  {item}
+                                </Badge>
+                              ))}
+                              {equipment.length > 2 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{equipment.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={
+                                room.trang_thai === "available"
+                                  ? "bg-green-100 text-green-800"
+                                  : room.trang_thai === "maintenance"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-red-100 text-red-800"
+                              }
                             >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                              {room.trang_thai === "available"
+                                ? "Có sẵn"
+                                : room.trang_thai === "maintenance"
+                                  ? "Bảo trì"
+                                  : "��ã đặt"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedRoom(room);
+                                  setShowRoomDialog(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -486,23 +571,25 @@ const PCTSVDashboard = () => {
                       <TableHead>Phòng</TableHead>
                       <TableHead>Người đặt</TableHead>
                       <TableHead>Ngày</TableHead>
-                      <TableHead>Thời gian</TableHead>
+                      <TableHead>Ca</TableHead>
                       <TableHead>Mục đích</TableHead>
                       <TableHead>Trạng thái</TableHead>
                       <TableHead>Hành động</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockBookings.map((booking) => (
-                      <TableRow key={booking.id}>
+                    {bookings.map((booking) => (
+                      <TableRow key={booking._id}>
                         <TableCell className="font-medium">
-                          {booking.room}
+                          {booking.Ma_phong}
                         </TableCell>
-                        <TableCell>{booking.booker}</TableCell>
-                        <TableCell>{booking.date}</TableCell>
-                        <TableCell>{booking.time}</TableCell>
-                        <TableCell>{booking.purpose}</TableCell>
-                        <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                        <TableCell>{booking.Ten_nguoi_dung}</TableCell>
+                        <TableCell>{booking.Ngay}</TableCell>
+                        <TableCell>{booking.Ca}</TableCell>
+                        <TableCell>{booking.Ly_do}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(booking.trang_thai || "pending")}
+                        </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button
@@ -515,23 +602,19 @@ const PCTSVDashboard = () => {
                             >
                               Chi tiết
                             </Button>
-                            {booking.status === "pending" && (
+                            {booking.trang_thai === "pending" && (
                               <>
                                 <Button
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700"
-                                  onClick={() =>
-                                    handleApproveBooking(booking.id)
-                                  }
+                                  onClick={() => handleApproveBooking(booking)}
                                 >
                                   <CheckCircle className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() =>
-                                    handleRejectBooking(booking.id)
-                                  }
+                                  onClick={() => handleRejectBooking(booking)}
                                 >
                                   <XCircle className="h-4 w-4" />
                                 </Button>
@@ -558,33 +641,38 @@ const PCTSVDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Phòng 201</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div className="bg-blue-600 h-2 rounded-full w-3/4"></div>
+                    {[...new Set(rooms.map((r) => r.Co_so))].map((building) => {
+                      const buildingRooms = rooms.filter(
+                        (r) => r.Co_so === building,
+                      );
+                      const availableCount = buildingRooms.filter(
+                        (r) => r.trang_thai === "available",
+                      ).length;
+                      const percentage =
+                        buildingRooms.length > 0
+                          ? (availableCount / buildingRooms.length) * 100
+                          : 0;
+
+                      return (
+                        <div
+                          key={building}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="text-sm">Tòa {building}</span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-32 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-green-600 h-2 rounded-full"
+                                style={{ width: `${percentage}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm text-gray-600">
+                              {availableCount}/{buildingRooms.length}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-sm text-gray-600">75%</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Phòng 202</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div className="bg-green-600 h-2 rounded-full w-1/2"></div>
-                        </div>
-                        <span className="text-sm text-gray-600">50%</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Phòng 301</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div className="bg-purple-600 h-2 rounded-full w-5/6"></div>
-                        </div>
-                        <span className="text-sm text-gray-600">85%</span>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
@@ -593,32 +681,46 @@ const PCTSVDashboard = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Calendar className="h-5 w-5 mr-2" />
-                    Thống kê theo thời gian
+                    Thống kê đặt phòng
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="text-center">
                       <div className="text-3xl font-bold text-blue-600">
-                        342
+                        {bookings.length}
                       </div>
                       <div className="text-sm text-gray-600">
-                        Lượt đặt tháng này
+                        Tổng số đặt phòng
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
-                        <div className="text-xl font-semibold">89</div>
-                        <div className="text-xs text-gray-600">Tuần này</div>
+                        <div className="text-xl font-semibold text-green-600">
+                          {
+                            bookings.filter((b) => b.trang_thai === "confirmed")
+                              .length
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">Đã duyệt</div>
                       </div>
                       <div>
-                        <div className="text-xl font-semibold">23</div>
-                        <div className="text-xs text-gray-600">Hôm nay</div>
+                        <div className="text-xl font-semibold text-yellow-600">
+                          {
+                            bookings.filter((b) => b.trang_thai === "pending")
+                              .length
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">Chờ duyệt</div>
                       </div>
-                    </div>
-                    <div className="pt-4 border-t">
-                      <div className="text-sm text-green-600">
-                        ↗ +12% so với tháng trước
+                      <div>
+                        <div className="text-xl font-semibold text-red-600">
+                          {
+                            bookings.filter((b) => b.trang_thai === "cancelled")
+                              .length
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">Đã hủy</div>
                       </div>
                     </div>
                   </div>
@@ -640,29 +742,33 @@ const PCTSVDashboard = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-room-name">Tên phòng</Label>
-                  <Input id="edit-room-name" defaultValue={selectedRoom.name} />
+                  <Label htmlFor="edit-room-number">Số phòng</Label>
+                  <Input
+                    id="edit-room-number"
+                    defaultValue={selectedRoom.So_phong}
+                    type="number"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-building">Tòa nhà</Label>
                   <select
                     id="edit-building"
-                    defaultValue={selectedRoom.building}
+                    defaultValue={selectedRoom.Co_so}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="CS1">Tòa CS1</option>
-                    <option value="CS2">Tòa CS2</option>
-                    <option value="CS3">Tòa CS3</option>
+                    <option value="VPC1">Tòa VPC1</option>
+                    <option value="VPC2">Tòa VPC2</option>
+                    <option value="VPC3">Tòa VPC3</option>
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-floor">Tầng</Label>
+                  <Label htmlFor="edit-area">Diện tích (m²)</Label>
                   <Input
-                    id="edit-floor"
+                    id="edit-area"
                     type="number"
-                    defaultValue={selectedRoom.floor}
+                    defaultValue={selectedRoom["Dien_tich (m2)"]}
                   />
                 </div>
                 <div className="space-y-2">
@@ -670,7 +776,7 @@ const PCTSVDashboard = () => {
                   <Input
                     id="edit-capacity"
                     type="number"
-                    defaultValue={selectedRoom.capacity}
+                    defaultValue={selectedRoom.Suc_chua}
                   />
                 </div>
               </div>
@@ -678,8 +784,18 @@ const PCTSVDashboard = () => {
                 <Label htmlFor="edit-equipment">Trang thiết bị</Label>
                 <Textarea
                   id="edit-equipment"
-                  defaultValue={selectedRoom.equipment.join(", ")}
+                  defaultValue={parseEquipment(
+                    selectedRoom.Co_so_vat_chat,
+                  ).join(", ")}
                   rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Mô tả</Label>
+                <Textarea
+                  id="edit-description"
+                  defaultValue={selectedRoom.Mo_ta}
+                  rows={2}
                 />
               </div>
               <div className="flex space-x-2">
@@ -711,51 +827,53 @@ const PCTSVDashboard = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm font-medium text-gray-600">Phòng</div>
-                  <div className="text-sm">{selectedBooking.room}</div>
+                  <div className="text-sm">{selectedBooking.Ma_phong}</div>
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-600">
                     Người đặt
                   </div>
-                  <div className="text-sm">{selectedBooking.booker}</div>
+                  <div className="text-sm">
+                    {selectedBooking.Ten_nguoi_dung}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm font-medium text-gray-600">Ngày</div>
-                  <div className="text-sm">{selectedBooking.date}</div>
+                  <div className="text-sm">{selectedBooking.Ngay}</div>
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-600">
-                    Thời gian
+                    Ca học
                   </div>
-                  <div className="text-sm">{selectedBooking.time}</div>
+                  <div className="text-sm">{selectedBooking.Ca}</div>
                 </div>
               </div>
               <div>
                 <div className="text-sm font-medium text-gray-600 mb-1">
                   Mục đích
                 </div>
-                <div className="text-sm">{selectedBooking.purpose}</div>
+                <div className="text-sm">{selectedBooking.Ly_do}</div>
               </div>
               <div>
                 <div className="text-sm font-medium text-gray-600 mb-1">
-                  Số người tham gia
+                  Email liên hệ
                 </div>
-                <div className="text-sm">{selectedBooking.attendees} người</div>
+                <div className="text-sm">{selectedBooking.Email}</div>
               </div>
               <div className="flex items-center justify-between pt-4 border-t">
-                {getStatusBadge(selectedBooking.status)}
+                {getStatusBadge(selectedBooking.trang_thai || "pending")}
                 <div className="text-xs text-gray-500">
-                  Mã: CMC{selectedBooking.id.padStart(6, "0")}
+                  Ngày đặt: {selectedBooking.Ngay_dat}
                 </div>
               </div>
-              {selectedBooking.status === "pending" && (
+              {selectedBooking.trang_thai === "pending" && (
                 <div className="flex space-x-2 pt-4">
                   <Button
                     className="flex-1 bg-green-600 hover:bg-green-700"
                     onClick={() => {
-                      handleApproveBooking(selectedBooking.id);
+                      handleApproveBooking(selectedBooking);
                       setShowBookingDialog(false);
                     }}
                   >
@@ -766,7 +884,7 @@ const PCTSVDashboard = () => {
                     variant="destructive"
                     className="flex-1"
                     onClick={() => {
-                      handleRejectBooking(selectedBooking.id);
+                      handleRejectBooking(selectedBooking);
                       setShowBookingDialog(false);
                     }}
                   >
