@@ -239,7 +239,7 @@ const BookingConfirmation = () => {
             variant="outline"
             className="flex items-center"
           >
-            <Print className="h-4 w-4 mr-2" />
+            <Printer className="h-4 w-4 mr-2" />
             In phiếu đặt phòng
           </Button>
 
