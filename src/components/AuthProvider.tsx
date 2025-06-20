@@ -24,20 +24,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     try {
       console.log(
-        "🔐 Attempting login for:",
+        "🔐 AuthProvider: Attempting login for:",
         email,
         "with password:",
         password,
       );
 
-      // Find user in MongoDB
-      const mongoUser = await userService.findByEmail(email);
+      // First, let's check if userService is available
+      console.log("📦 AuthProvider: userService available:", !!userService);
 
-      console.log("👤 Found user:", mongoUser);
+      // Import fresh instance to be sure
+      const { userService: freshUserService } = await import("@/lib/mongodb");
+      console.log(
+        "📦 AuthProvider: Fresh userService available:",
+        !!freshUserService,
+      );
+
+      // Find user in MongoDB
+      console.log("🔍 AuthProvider: Calling findByEmail...");
+      const mongoUser = await freshUserService.findByEmail(email);
+
+      console.log("👤 AuthProvider: Found user:", mongoUser);
 
       if (mongoUser) {
         console.log(
-          "🔑 Password check - Input:",
+          "🔑 AuthProvider: Password check - Input:",
           password,
           "Stored:",
           mongoUser.mat_khau,
@@ -54,10 +65,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             hasChangedPassword: mongoUser.mat_khau !== "123456",
           };
 
+          console.log("✨ AuthProvider: Created app user:", appUser);
           setUser(appUser);
           localStorage.setItem("auth_user", JSON.stringify(appUser));
           console.log(
-            "✅ Login successful for:",
+            "✅ AuthProvider: Login successful for:",
             email,
             "User role:",
             appUser.role,
@@ -65,17 +77,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setIsLoading(false);
           return true;
         } else {
-          console.log("❌ Password mismatch for:", email);
+          console.log("❌ AuthProvider: Password mismatch for:", email);
         }
       } else {
-        console.log("❌ No user found for email:", email);
+        console.log("❌ AuthProvider: No user found for email:", email);
+
+        // Let's try to debug what users are actually available
+        try {
+          const { debugUsers } = await import("@/lib/mongodb");
+          console.log("🔍 AuthProvider: Available users:");
+          debugUsers();
+        } catch (debugError) {
+          console.log("🚨 AuthProvider: Could not debug users:", debugError);
+        }
       }
 
-      console.log("❌ Login failed for:", email);
+      console.log("❌ AuthProvider: Login failed for:", email);
       setIsLoading(false);
       return false;
     } catch (error) {
-      console.error("🚨 Login error:", error);
+      console.error("🚨 AuthProvider: Login error:", error);
+      console.error("🚨 AuthProvider: Error stack:", error.stack);
       setIsLoading(false);
       return false;
     }
