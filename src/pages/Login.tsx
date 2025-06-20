@@ -150,75 +150,124 @@ const Login = () => {
           </CardHeader>
           <CardContent className="text-xs space-y-2">
             <div className="space-y-1">
-              <div>
-                <strong>Sinh viên:</strong> BIT230372@st.cmc.edu.vn / 123456
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="ml-2 text-xs py-1 h-6"
-                  onClick={() => {
-                    setEmail("BIT230372@st.cmc.edu.vn");
-                    setPassword("123456");
-                  }}
-                >
-                  Tự động điền
-                </Button>
+              <div className="mb-2">
+                <div className="text-xs font-semibold text-gray-700 mb-1">
+                  SINH VIÊN:
+                </div>
+                <div className="text-xs">
+                  <strong>Nguyễn Thị Tâm:</strong> BIT230372@st.cmc.edu.vn /
+                  123456
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 text-xs py-1 h-5"
+                    onClick={() => {
+                      setEmail("BIT230372@st.cmc.edu.vn");
+                      setPassword("123456");
+                    }}
+                  >
+                    Điền
+                  </Button>
+                </div>
+                <div className="text-xs mt-1">
+                  <strong>Trần Văn Nam:</strong> BIT230101@st.cmc.edu.vn /
+                  123456
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 text-xs py-1 h-5"
+                    onClick={() => {
+                      setEmail("BIT230101@st.cmc.edu.vn");
+                      setPassword("123456");
+                    }}
+                  >
+                    Điền
+                  </Button>
+                </div>
               </div>
-              <div>
-                <strong>Giảng viên:</strong> teacher1@st.cmc.edu.vn / 123456
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="ml-2 text-xs py-1 h-6"
-                  onClick={() => {
-                    setEmail("teacher1@st.cmc.edu.vn");
-                    setPassword("123456");
-                  }}
-                >
-                  Tự động điền
-                </Button>
+
+              <div className="mb-2">
+                <div className="text-xs font-semibold text-gray-700 mb-1">
+                  GIẢNG VIÊN:
+                </div>
+                <div className="text-xs">
+                  <strong>TS. Trần Thị B:</strong> teacher1@st.cmc.edu.vn /
+                  123456
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 text-xs py-1 h-5"
+                    onClick={() => {
+                      setEmail("teacher1@st.cmc.edu.vn");
+                      setPassword("123456");
+                    }}
+                  >
+                    Điền
+                  </Button>
+                </div>
+                <div className="text-xs mt-1">
+                  <strong>PGS.TS. Nguyễn Văn Minh:</strong> nvminh@st.cmc.edu.vn
+                  / 123456
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 text-xs py-1 h-5"
+                    onClick={() => {
+                      setEmail("nvminh@st.cmc.edu.vn");
+                      setPassword("123456");
+                    }}
+                  >
+                    Điền
+                  </Button>
+                </div>
               </div>
-              <div>
-                <strong>Admin:</strong> admin@cmc.edu.vn / 123456
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="ml-2 text-xs py-1 h-6"
-                  onClick={() => {
-                    setEmail("admin@cmc.edu.vn");
-                    setPassword("123456");
-                  }}
-                >
-                  Tự động điền
-                </Button>
-              </div>
-              <div>
-                <strong>PCTSV:</strong> pctsv@cmc.edu.vn / 123456
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="ml-2 text-xs py-1 h-6"
-                  onClick={() => {
-                    setEmail("pctsv@cmc.edu.vn");
-                    setPassword("123456");
-                  }}
-                >
-                  Tự động điền
-                </Button>
-              </div>
-              <div>
-                <strong>Bảo vệ:</strong> security@cmc.edu.vn / 123456
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="ml-2 text-xs py-1 h-6"
-                  onClick={() => {
-                    setEmail("security@cmc.edu.vn");
-                    setPassword("123456");
-                  }}
-                >
-                  Tự động điền
-                </Button>
+
+              <div className="mb-2">
+                <div className="text-xs font-semibold text-gray-700 mb-1">
+                  QUẢN TRỊ:
+                </div>
+                <div className="text-xs">
+                  <strong>Admin:</strong> admin@cmc.edu.vn / 123456
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 text-xs py-1 h-5"
+                    onClick={() => {
+                      setEmail("admin@cmc.edu.vn");
+                      setPassword("123456");
+                    }}
+                  >
+                    Điền
+                  </Button>
+                </div>
+                <div className="text-xs mt-1">
+                  <strong>PCTSV:</strong> pctsv@cmc.edu.vn / 123456
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 text-xs py-1 h-5"
+                    onClick={() => {
+                      setEmail("pctsv@cmc.edu.vn");
+                      setPassword("123456");
+                    }}
+                  >
+                    Điền
+                  </Button>
+                </div>
+                <div className="text-xs mt-1">
+                  <strong>Bảo vệ:</strong> security@cmc.edu.vn / 123456
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2 text-xs py-1 h-5"
+                    onClick={() => {
+                      setEmail("security@cmc.edu.vn");
+                      setPassword("123456");
+                    }}
+                  >
+                    Điền
+                  </Button>
+                </div>
               </div>
             </div>
 
