@@ -28,15 +28,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Find user in MongoDB
       const mongoUser = await userService.findByEmail(email);
 
-      if (mongoUser && mongoUser.password === password) {
+      if (mongoUser && mongoUser.mat_khau === password) {
         // Convert MongoDB user to app user format
         const appUser: User = {
           id: mongoUser._id || mongoUser.email,
           email: mongoUser.email,
-          name: mongoUser.name,
-          role: mongoUser.role,
-          studentId: mongoUser.studentId,
-          hasChangedPassword: mongoUser.hasChangedPassword,
+          name: mongoUser.ten_nguoi_dung,
+          role: mongoUser.vai_tro || "student",
+          studentId: mongoUser.ma_nguoi_dung,
+          hasChangedPassword: mongoUser.mat_khau !== "123456",
         };
 
         setUser(appUser);
