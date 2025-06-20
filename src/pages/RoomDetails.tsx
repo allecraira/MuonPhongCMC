@@ -187,16 +187,16 @@ const RoomDetails = () => {
                 </h1>
                 <Badge
                   className={
-                    room.status === "available"
+                    (room.status || room.trang_thai) === "available"
                       ? "bg-green-100 text-green-800"
-                      : room.status === "booked"
+                      : (room.status || room.trang_thai) === "booked"
                         ? "bg-red-100 text-red-800"
                         : "bg-yellow-100 text-yellow-800"
                   }
                 >
-                  {room.status === "available"
+                  {(room.status || room.trang_thai) === "available"
                     ? "Có sẵn"
-                    : room.status === "booked"
+                    : (room.status || room.trang_thai) === "booked"
                       ? "Đã đặt"
                       : "Bảo trì"}
                 </Badge>
@@ -484,7 +484,7 @@ const RoomDetails = () => {
                 </div>
               </div>
               <p className="text-gray-400 text-sm">
-                Hệ thống đặt phòng trực tuyến hiện đại, ti��n lợi và nhanh chóng
+                Hệ thống đặt phòng trực tuyến hiện đại, tiện lợi và nhanh chóng
                 dành cho sinh viên Trường Đại học CMC.
               </p>
             </div>
