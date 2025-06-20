@@ -265,7 +265,7 @@ const RoomDetails = () => {
                               {![
                                 "Máy chiếu",
                                 "Wifi",
-                                "Điều hòa",
+                                "Điều h��a",
                                 "Bảng trắng",
                               ].includes(item) && (
                                 <CheckCircle className="h-4 w-4 text-gray-600" />
@@ -311,29 +311,107 @@ const RoomDetails = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                          <p>Hình ảnh tổng quan phòng</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Main room images */}
+                      <div className="space-y-4">
+                        <div className="aspect-video rounded-lg overflow-hidden">
+                          <img
+                            src="https://images.unsplash.com/photo-1577412647305-991150c7d163?w=600&h=400&fit=crop&crop=center"
+                            alt="Hình ảnh tổng quan phòng"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="aspect-video rounded-lg overflow-hidden">
+                            <img
+                              src="https://images.unsplash.com/photo-1562774053-701939374585?w=300&h=200&fit=crop&crop=center"
+                              alt="Thiết bị máy chiếu"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="aspect-video rounded-lg overflow-hidden">
+                            <img
+                              src="https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=300&h=200&fit=crop&crop=center"
+                              alt="Bàn ghế học tập"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         </div>
                       </div>
-                      <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                          <p>Góc nhìn từ phía sau</p>
+
+                      {/* Equipment and facilities */}
+                      <div className="space-y-4">
+                        <div className="aspect-video rounded-lg overflow-hidden">
+                          <img
+                            src="https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=600&h=400&fit=crop&crop=center"
+                            alt="Góc nhìn từ phía sau"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="aspect-video rounded-lg overflow-hidden">
+                            <img
+                              src="https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=300&h=200&fit=crop&crop=center"
+                              alt="Bảng trắng và dụng cụ"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="aspect-video rounded-lg overflow-hidden">
+                            <img
+                              src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop&crop=center"
+                              alt="Nội thất hiện đại"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         </div>
                       </div>
-                      <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                          <p>Thiết bị máy chiếu</p>
+                    </div>
+
+                    {/* Additional facility images */}
+                    <div className="mt-6">
+                      <h4 className="font-semibold text-gray-900 mb-4">
+                        Tiện nghi có sẵn
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="aspect-square rounded-lg overflow-hidden relative">
+                          <img
+                            src="https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=200&h=200&fit=crop&crop=center"
+                            alt="Điều hòa"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2 text-sm">
+                            Điều hòa
+                          </div>
                         </div>
-                      </div>
-                      <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                          <p>Bảng trắng và ghế ngồi</p>
+                        <div className="aspect-square rounded-lg overflow-hidden relative">
+                          <img
+                            src="https://images.unsplash.com/photo-1544717302-de2939b7ef71?w=200&h=200&fit=crop&crop=center"
+                            alt="WiFi"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2 text-sm">
+                            WiFi miễn phí
+                          </div>
+                        </div>
+                        <div className="aspect-square rounded-lg overflow-hidden relative">
+                          <img
+                            src="https://images.unsplash.com/photo-1583415452781-6d2678edd6cb?w=200&h=200&fit=crop&crop=center"
+                            alt="Hệ thống âm thanh"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2 text-sm">
+                            Âm thanh
+                          </div>
+                        </div>
+                        <div className="aspect-square rounded-lg overflow-hidden relative">
+                          <img
+                            src="https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=200&h=200&fit=crop&crop=center"
+                            alt="Bàn ghế"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2 text-sm">
+                            Bàn ghế
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -344,7 +422,7 @@ const RoomDetails = () => {
               <TabsContent value="schedule" className="mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Lịch sử dụng phòng</CardTitle>
+                    <CardTitle>Lịch s�� dụng phòng</CardTitle>
                     <CardDescription>
                       Xem lịch trình và tình trạng phòng
                     </CardDescription>
