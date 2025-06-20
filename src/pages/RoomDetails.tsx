@@ -183,7 +183,7 @@ const RoomDetails = () => {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-3xl font-bold text-gray-900">
-                  {room.name}
+                  {room.name || `Phòng ${room.So_phong}`}
                 </h1>
                 <Badge
                   className={
@@ -457,7 +457,7 @@ const RoomDetails = () => {
                 </Button>
 
                 <div className="text-center text-sm text-gray-500">
-                  Vui lòng chọn ngày để đ���t phòng trước
+                  Vui lòng chọn ngày để đặt phòng trước
                 </div>
               </CardContent>
             </Card>
@@ -484,7 +484,7 @@ const RoomDetails = () => {
                 </div>
               </div>
               <p className="text-gray-400 text-sm">
-                Hệ thống đặt phòng trực tuyến hiện đại, tiện lợi và nhanh chóng
+                Hệ thống đặt phòng trực tuyến hiện đại, ti��n lợi và nhanh chóng
                 dành cho sinh viên Trường Đại học CMC.
               </p>
             </div>
