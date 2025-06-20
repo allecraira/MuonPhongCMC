@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
+import { roomService, MongoRoom } from "@/lib/mongodb";
 import {
   Card,
   CardContent,
@@ -29,83 +30,35 @@ import {
   Coffee,
 } from "lucide-react";
 
-// Mock room data
-const allRooms = [
-  {
-    id: "201",
-    name: "Phòng 201",
-    building: "CS1",
-    floor: "Tầng 2",
-    capacity: 50,
-    status: "available",
-    equipment: ["Máy chiếu", "Wifi", "Điều hòa"],
-    description:
-      "Phòng học hiện đại với đầy đủ trang thiết bị phục vụ việc học tập và họp nhóm.",
-  },
-  {
-    id: "202",
-    name: "Phòng 202",
-    building: "CS1",
-    floor: "Tầng 2",
-    capacity: 30,
-    status: "booked",
-    equipment: ["Máy chiếu", "Wifi"],
-    description:
-      "Phòng họp nhỏ thích hợp cho các buổi thảo luận nhóm và seminar.",
-  },
-  {
-    id: "301",
-    name: "Phòng 301",
-    building: "CS2",
-    floor: "Tầng 3",
-    capacity: 80,
-    status: "available",
-    equipment: ["Máy chiếu", "Bảng trắng", "Wifi"],
-    description:
-      "Hội trường lớn phù hợp cho các sự kiện, hội thảo và buổi thuyết trình.",
-  },
-  {
-    id: "302",
-    name: "Phòng 302",
-    building: "CS2",
-    floor: "Tầng 3",
-    capacity: 25,
-    status: "available",
-    equipment: ["Máy chiếu", "Wifi"],
-    description:
-      "Phòng lab máy tính với trang thiết bị hiện đại cho thực hành lập trình.",
-  },
-  {
-    id: "401",
-    name: "Phòng 401",
-    building: "CS3",
-    floor: "Tầng 4",
-    capacity: 40,
-    status: "maintenance",
-    equipment: ["Máy chiếu", "Wifi"],
-    description:
-      "Phòng đa năng thích hợp cho các hoạt động học tập và sự kiện sinh viên.",
-  },
-  {
-    id: "402",
-    name: "Phòng 402",
-    building: "CS3",
-    floor: "Tầng 4",
-    capacity: 60,
-    status: "available",
-    equipment: ["Máy chiếu", "Điều hòa", "Wifi"],
-    description:
-      "Phòng học lớn với âm thanh ánh sáng tốt, phù hợp cho các bài giảng.",
-  },
-];
-
 const RoomSearch = () => {
+  const [allRooms, setAllRooms] = useState<MongoRoom[]>([]);
+  const [filteredRooms, setFilteredRooms] = useState<MongoRoom[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchFilters, setSearchFilters] = useState({
     name: "",
     building: "all",
     capacity: "all",
   });
-  const [filteredRooms, setFilteredRooms] = useState(allRooms);
+
+  // Load rooms from MongoDB on component mount
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        console.log("📚 Loading rooms from database...");
+        setIsLoading(true);
+        const rooms = await roomService.getAllRooms();
+        setAllRooms(rooms);
+        setFilteredRooms(rooms);
+        console.log("✅ Loaded", rooms.length, "rooms from database");
+      } catch (error) {
+        console.error("❌ Error loading rooms:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRooms();
+  }, []);
 
   const handleSearch = () => {
     let filtered = allRooms;
@@ -254,7 +207,22 @@ const RoomSearch = () => {
 
         {/* Room Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRooms.length === 0 ? (
+          {isLoading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                <div className="aspect-video bg-gray-200 animate-pulse"></div>
+                <CardHeader>
+                  <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                </CardContent>
+              </Card>
+            ))
+          ) : filteredRooms.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <div className="text-gray-500">
                 <Building2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -588,7 +556,7 @@ const RoomSearch = () => {
                 </li>
                 <li>
                   <Link to="#" className="hover:text-white transition-colors">
-                    Liên hệ CTSY
+                    Liên h��� CTSY
                   </Link>
                 </li>
                 <li>
