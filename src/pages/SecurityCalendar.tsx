@@ -408,7 +408,7 @@ const SecurityCalendar = () => {
 
               <div>
                 <div className="text-sm font-medium text-gray-600 mb-1">
-                  Người đặt
+                  Người ��ặt
                 </div>
                 <div className="text-sm">{selectedBooking.booker}</div>
                 <Badge
@@ -510,16 +510,68 @@ const SecurityCalendar = () => {
                     size="sm"
                     className="flex items-center justify-center text-orange-600 border-orange-200 hover:bg-orange-50"
                     onClick={() => {
-                      const report = prompt("📝 Nhập báo cáo sự cố (nếu có):");
-                      if (report) {
-                        console.log(
-                          "📋 Incident report for:",
-                          selectedBooking.id,
-                          report,
+                      // Create a better reporting interface
+                      const reportTypes = [
+                        "Thiết bị hỏng hóc",
+                        "Vệ sinh không đảm bảo",
+                        "Mất trật tự",
+                        "Khác",
+                      ];
+
+                      const reportType = prompt(
+                        `📝 Chọn loại báo cáo:\n${reportTypes.map((type, i) => `${i + 1}. ${type}`).join("\n")}\n\nNhập số (1-${reportTypes.length}):`,
+                      );
+
+                      if (reportType && reportType.match(/^[1-4]$/)) {
+                        const selectedType =
+                          reportTypes[parseInt(reportType) - 1];
+                        const detail = prompt(
+                          `📋 Chi tiết báo cáo về "${selectedType}":`,
                         );
-                        alert(
-                          `📝 Báo cáo đã được ghi nhận!\n\nPhòng: ${selectedBooking.room}\nSự cố: ${report}\nThời gian: ${new Date().toLocaleString("vi-VN")}`,
-                        );
+
+                        if (detail) {
+                          console.log("📋 Incident report:", {
+                            bookingId: selectedBooking.id,
+                            room: selectedBooking.room,
+                            type: selectedType,
+                            detail: detail,
+                            reporter: "Bảo vệ",
+                            timestamp: new Date().toISOString(),
+                          });
+
+                          // Create success notification
+                          const notification = document.createElement("div");
+                          notification.className =
+                            "fixed top-4 right-4 bg-orange-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full";
+                          notification.innerHTML = `
+                            <div class="flex items-center">
+                              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                              </svg>
+                              <div>
+                                <div class="font-medium">Báo cáo đã gửi!</div>
+                                <div class="text-sm">${selectedType} - ${selectedBooking.room}</div>
+                              </div>
+                            </div>
+                          `;
+
+                          document.body.appendChild(notification);
+
+                          setTimeout(() => {
+                            notification.classList.remove("translate-x-full");
+                          }, 100);
+
+                          setTimeout(() => {
+                            notification.classList.add("translate-x-full");
+                            setTimeout(() => {
+                              document.body.removeChild(notification);
+                            }, 300);
+                          }, 4000);
+
+                          alert(
+                            `📝 Báo cáo đã được ghi nhận!\n\nPhòng: ${selectedBooking.room}\nLoại: ${selectedType}\nChi tiết: ${detail}\nThời gian: ${new Date().toLocaleString("vi-VN")}`,
+                          );
+                        }
                       }
                     }}
                   >
