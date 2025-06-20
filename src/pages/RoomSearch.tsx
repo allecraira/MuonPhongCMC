@@ -65,23 +65,22 @@ const RoomSearch = () => {
 
     if (searchFilters.name) {
       filtered = filtered.filter((room) =>
-        room.name.toLowerCase().includes(searchFilters.name.toLowerCase()),
+        room.Ma_phong.toLowerCase().includes(searchFilters.name.toLowerCase()),
       );
     }
 
     if (searchFilters.building && searchFilters.building !== "all") {
       filtered = filtered.filter(
-        (room) => room.building === searchFilters.building,
+        (room) => room.Co_so === searchFilters.building,
       );
     }
 
     if (searchFilters.capacity && searchFilters.capacity !== "all") {
-      const capacity = parseInt(searchFilters.capacity);
       filtered = filtered.filter((room) => {
-        if (searchFilters.capacity === "small") return room.capacity <= 30;
+        if (searchFilters.capacity === "small") return room.Suc_chua <= 30;
         if (searchFilters.capacity === "medium")
-          return room.capacity > 30 && room.capacity <= 60;
-        if (searchFilters.capacity === "large") return room.capacity > 60;
+          return room.Suc_chua > 30 && room.Suc_chua <= 60;
+        if (searchFilters.capacity === "large") return room.Suc_chua > 60;
         return true;
       });
     }
@@ -556,7 +555,7 @@ const RoomSearch = () => {
                 </li>
                 <li>
                   <Link to="#" className="hover:text-white transition-colors">
-                    Liên h��� CTSY
+                    Liên hệ CTSY
                   </Link>
                 </li>
                 <li>
