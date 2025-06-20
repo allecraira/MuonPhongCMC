@@ -204,10 +204,12 @@ const RoomDetails = () => {
               <div className="flex items-center text-gray-600 mb-4">
                 <MapPin className="h-5 w-5 mr-2" />
                 <span>
-                  {room.floor}, Tòa {room.building}
+                  {room.floor || `Tòa ${room.Co_so}`}
+                  {room.building && `, Tòa ${room.building}`}
+                  {room["Dien_tich (m2)"] && ` - ${room["Dien_tich (m2)"]}m²`}
                 </span>
                 <Users className="h-5 w-5 ml-6 mr-2" />
-                <span>{room.capacity} người</span>
+                <span>{room.capacity || room.Suc_chua} người</span>
               </div>
             </div>
 
