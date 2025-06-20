@@ -149,20 +149,98 @@ const Login = () => {
             <CardTitle className="text-sm">Tài khoản demo</CardTitle>
           </CardHeader>
           <CardContent className="text-xs space-y-2">
-            <div>
-              <strong>Sinh viên:</strong> BIT230372@st.cmc.edu.vn / 123456
+            <div className="space-y-1">
+              <div>
+                <strong>Sinh viên:</strong> BIT230372@st.cmc.edu.vn / 123456
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 text-xs py-1 h-6"
+                  onClick={() => {
+                    setEmail("BIT230372@st.cmc.edu.vn");
+                    setPassword("123456");
+                  }}
+                >
+                  Tự động điền
+                </Button>
+              </div>
+              <div>
+                <strong>Giảng viên:</strong> teacher1@st.cmc.edu.vn / 123456
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 text-xs py-1 h-6"
+                  onClick={() => {
+                    setEmail("teacher1@st.cmc.edu.vn");
+                    setPassword("123456");
+                  }}
+                >
+                  Tự động điền
+                </Button>
+              </div>
+              <div>
+                <strong>Admin:</strong> admin@cmc.edu.vn / 123456
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 text-xs py-1 h-6"
+                  onClick={() => {
+                    setEmail("admin@cmc.edu.vn");
+                    setPassword("123456");
+                  }}
+                >
+                  Tự động điền
+                </Button>
+              </div>
+              <div>
+                <strong>PCTSV:</strong> pctsv@cmc.edu.vn / 123456
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 text-xs py-1 h-6"
+                  onClick={() => {
+                    setEmail("pctsv@cmc.edu.vn");
+                    setPassword("123456");
+                  }}
+                >
+                  Tự động điền
+                </Button>
+              </div>
+              <div>
+                <strong>Bảo vệ:</strong> security@cmc.edu.vn / 123456
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-2 text-xs py-1 h-6"
+                  onClick={() => {
+                    setEmail("security@cmc.edu.vn");
+                    setPassword("123456");
+                  }}
+                >
+                  Tự động điền
+                </Button>
+              </div>
             </div>
-            <div>
-              <strong>Giảng viên:</strong> teacher1@st.cmc.edu.vn / 123456
-            </div>
-            <div>
-              <strong>Admin:</strong> admin@cmc.edu.vn / 123456
-            </div>
-            <div>
-              <strong>PCTSV:</strong> pctsv@cmc.edu.vn / 123456
-            </div>
-            <div>
-              <strong>Bảo vệ:</strong> security@cmc.edu.vn / 123456
+
+            {/* Debug Section */}
+            <div className="border-t pt-2 mt-2">
+              <div className="text-xs text-gray-500 mb-1">Debug Tools:</div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs py-1 h-6 w-full"
+                onClick={() => {
+                  // @ts-ignore
+                  if (window.debugCMC) {
+                    // @ts-ignore
+                    window.debugCMC.checkConnection();
+                  } else {
+                    console.log("Debug tools not available yet");
+                  }
+                }}
+              >
+                Check Connection & Users
+              </Button>
             </div>
           </CardContent>
         </Card>
