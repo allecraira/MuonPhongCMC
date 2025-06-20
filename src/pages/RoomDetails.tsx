@@ -250,7 +250,7 @@ const RoomDetails = () => {
                             className="flex items-center space-x-3"
                           >
                             <div className="p-2 bg-blue-100 rounded-full">
-                              {item === "Máy chi���u" && (
+                              {item === "Máy chiếu" && (
                                 <Monitor className="h-4 w-4 text-blue-600" />
                               )}
                               {item === "Wifi" && (
@@ -281,17 +281,22 @@ const RoomDetails = () => {
                       <h4 className="font-semibold text-gray-900 mb-3">
                         Quy định sử dụng
                       </h4>
-                      <ul className="text-gray-600 space-y-2">
-                        <li>• Giữ gìn vệ sinh và tài sản trong phòng</li>
-                        <li>
-                          • Không mang đồ ăn, thức uống vào phòng (trừ nước lọc)
-                        </li>
-                        <li>
-                          • Không gây ồn ào, ảnh hưởng đến phòng xung quanh
-                        </li>
-                        <li>• Tắt điện, điều hòa khi ra khỏi phòng</li>
-                        <li>• Báo cáo ngay khi có sự cố về thiết bị</li>
-                      </ul>
+                      {room.Quy_dinh ? (
+                        <p className="text-gray-600">{room.Quy_dinh}</p>
+                      ) : (
+                        <ul className="text-gray-600 space-y-2">
+                          <li>• Giữ gìn vệ sinh và tài sản trong phòng</li>
+                          <li>
+                            • Không mang đồ ăn, thức uống vào phòng (trừ nước
+                            lọc)
+                          </li>
+                          <li>
+                            • Không gây ồn ào, ảnh hưởng đến phòng xung quanh
+                          </li>
+                          <li>• Tắt điện, điều hòa khi ra khỏi phòng</li>
+                          <li>• Báo cáo ngay khi có sự cố về thiết bị</li>
+                        </ul>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
