@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { userService } from "@/lib/mongodb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,11 +35,6 @@ const Profile = () => {
     setError("");
     setMessage("");
 
-    if (currentPassword !== "123456") {
-      setError("Mật khẩu hiện tại không đúng");
-      return;
-    }
-
     if (newPassword !== confirmPassword) {
       setError("Mật khẩu mới và xác nhận mật khẩu không khớp");
       return;
@@ -49,12 +45,40 @@ const Profile = () => {
       return;
     }
 
-    // Update user with new password flag
-    updateUser({ hasChangedPassword: true });
-    setMessage("Đổi mật khẩu thành công!");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    try {
+      console.log("🔄 Changing password for:", user.email);
+
+      // Verify current password and update in MongoDB
+      const currentUser = await userService.findByEmail(user.email);
+
+      if (!currentUser || currentUser.password !== currentPassword) {
+        setError("Mật khẩu hiện tại không đúng");
+        return;
+      }
+
+      // Update password in MongoDB
+      const updateSuccess = await userService.updatePassword(
+        user.email,
+        newPassword,
+      );
+
+      if (updateSuccess) {
+        // Update local user state
+        updateUser({ hasChangedPassword: true });
+        setMessage(
+          "Đổi mật khẩu thành công! Mật khẩu đã được cập nhật trong cơ sở dữ liệu.",
+        );
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        console.log("✅ Password updated successfully");
+      } else {
+        setError("Có lỗi xảy ra khi cập nhật mật khẩu. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error("❌ Password change error:", error);
+      setError("Có lỗi xảy ra. Vui lòng thử lại sau.");
+    }
   };
 
   const getRoleName = (role: string) => {
