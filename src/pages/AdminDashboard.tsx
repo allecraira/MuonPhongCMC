@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import EmailTestDialog from "@/components/EmailTestDialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -119,6 +120,7 @@ const AdminDashboard = () => {
             </div>
 
             <div className="flex items-center space-x-3">
+              <EmailTestDialog />
               <div className="text-sm text-gray-600">
                 Xin chào, {user?.name}
               </div>
@@ -381,7 +383,7 @@ const AdminDashboard = () => {
           <TabsContent value="logs">
             <Card>
               <CardHeader>
-                <CardTitle>Nh���t ký hoạt động hệ thống</CardTitle>
+                <CardTitle>Nhật ký hoạt động hệ thống</CardTitle>
                 <CardDescription>
                   Theo dõi các hoạt động quan trọng trong hệ thống
                 </CardDescription>
