@@ -30,108 +30,89 @@ import {
   ArrowLeft,
   CheckCircle,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
-
-// Mock booking data
-const bookings = [
-  {
-    id: "1",
-    room: "Phòng 201",
-    building: "Tòa CS1",
-    time: "08:00 - 10:00",
-    date: "2025-01-17",
-    booker: "Nguyễn Văn A",
-    role: "Sinh viên",
-    purpose: "Họp nhóm dự án",
-    attendees: 15,
-    phone: "0123456789",
-    email: "student1@cmc.edu.vn",
-    status: "confirmed",
-  },
-  {
-    id: "2",
-    room: "Phòng 202",
-    building: "Tòa CS1",
-    time: "10:00 - 12:00",
-    date: "2025-01-17",
-    booker: "TS. Trần Thị B",
-    role: "Giảng viên",
-    purpose: "Lớp học Lập trình Java",
-    attendees: 30,
-    phone: "0987654321",
-    email: "teacher1@cmc.edu.vn",
-    status: "confirmed",
-  },
-  {
-    id: "3",
-    room: "Phòng 301",
-    building: "Tòa CS2",
-    time: "14:00 - 16:00",
-    date: "2025-01-17",
-    booker: "Lê Văn C",
-    role: "Sinh viên",
-    purpose: "Thực hành máy tính",
-    attendees: 25,
-    phone: "0369258147",
-    email: "student2@cmc.edu.vn",
-    status: "confirmed",
-  },
-  {
-    id: "4",
-    room: "Phòng 201",
-    building: "Tòa CS1",
-    time: "16:00 - 18:00",
-    date: "2025-01-17",
-    booker: "Phạm Thị D",
-    role: "Sinh viên",
-    purpose: "Họp CLB Lập trình",
-    attendees: 20,
-    phone: "0147258369",
-    email: "student3@cmc.edu.vn",
-    status: "confirmed",
-  },
-];
-
-const timeSlots = [
-  "08:00",
-  "09:00",
-  "10:00",
-  "11:00",
-  "12:00",
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00",
-];
-
-const rooms = [
-  { id: "201", name: "Phòng 201", building: "CS1" },
-  { id: "202", name: "Phòng 202", building: "CS1" },
-  { id: "203", name: "Phòng 203", building: "CS1" },
-  { id: "301", name: "Phòng 301", building: "CS2" },
-  { id: "302", name: "Phòng 302", building: "CS2" },
-  { id: "401", name: "Phòng 401", building: "CS3" },
-];
+import {
+  bookingService,
+  roomService,
+  MongoBookingHistory,
+  MongoRoom,
+} from "@/lib/mongodb";
 
 const SecurityCalendar = () => {
-  const [selectedDate] = useState(new Date("2025-01-17"));
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedDate] = useState(new Date());
+  const [selectedBooking, setSelectedBooking] =
+    useState<MongoBookingHistory | null>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [bookings, setBookings] = useState<MongoBookingHistory[]>([]);
+  const [rooms, setRooms] = useState<MongoRoom[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load booking and room data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        console.log("📊 Loading security calendar data...");
+
+        const [bookingsData, roomsData] = await Promise.all([
+          bookingService.getAllBookings(),
+          roomService.getAllRooms(),
+        ]);
+
+        setBookings(bookingsData);
+        setRooms(roomsData);
+
+        console.log("✅ Security data loaded:", {
+          bookings: bookingsData.length,
+          rooms: roomsData.length,
+        });
+      } catch (error) {
+        console.error("❌ Error loading security data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Create mock time slots for display
+  const timeSlots = [
+    "07:00",
+    "08:00",
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "18:00",
+  ];
+
+  // Get unique rooms for display
+  const displayRooms = rooms.slice(0, 6).map((room) => ({
+    id: room.So_phong.toString(),
+    name: `Phòng ${room.So_phong}`,
+    building: room.Co_so,
+  }));
 
   const getBookingForSlot = (roomId: string, timeSlot: string) => {
+    // Convert timeSlot to a matching format and find bookings
     return bookings.find((booking) => {
-      const [startTime] = booking.time.split(" - ");
-      return (
-        booking.room === `Phòng ${roomId}` &&
-        booking.date === "2025-01-17" &&
-        startTime === timeSlot
-      );
+      // Simple matching for demonstration
+      const roomMatches =
+        booking.Ma_phong.includes(roomId) ||
+        booking.Ma_phong.includes(`${roomId}`);
+      // For demo, show some bookings
+      return roomMatches && booking.trang_thai === "confirmed";
     });
   };
 
-  const handleBookingClick = (booking: any) => {
+  const handleBookingClick = (booking: MongoBookingHistory) => {
     setSelectedBooking(booking);
     setShowDialog(true);
   };
@@ -144,6 +125,115 @@ const SecurityCalendar = () => {
       day: "numeric",
     });
   };
+
+  const handleCheckIn = (booking: MongoBookingHistory) => {
+    console.log("📋 Check-in:", booking._id);
+
+    // Create success notification
+    const notification = document.createElement("div");
+    notification.className =
+      "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full";
+    notification.innerHTML = `
+      <div class="flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        <div>
+          <div class="font-medium">Check-in thành công!</div>
+          <div class="text-sm">${booking.Ma_phong} - ${booking.Ten_nguoi_dung}</div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+      notification.classList.remove("translate-x-full");
+    }, 100);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      notification.classList.add("translate-x-full");
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 3000);
+  };
+
+  const handleReport = (booking: MongoBookingHistory) => {
+    // Create a better reporting interface
+    const reportTypes = [
+      "Thiết bị hỏng hóc",
+      "Vệ sinh không đảm bảo",
+      "Mất trật tự",
+      "Khác",
+    ];
+
+    const reportType = prompt(
+      `📝 Chọn loại báo cáo:\n${reportTypes
+        .map((type, i) => `${i + 1}. ${type}`)
+        .join("\n")}\n\nNhập số (1-${reportTypes.length}):`,
+    );
+
+    if (reportType && reportType.match(/^[1-4]$/)) {
+      const selectedType = reportTypes[parseInt(reportType) - 1];
+      const detail = prompt(`📋 Chi tiết báo cáo về "${selectedType}":`);
+
+      if (detail) {
+        console.log("📋 Incident report:", {
+          bookingId: booking._id,
+          room: booking.Ma_phong,
+          type: selectedType,
+          detail: detail,
+          reporter: "Bảo vệ",
+          timestamp: new Date().toISOString(),
+        });
+
+        // Create success notification
+        const notification = document.createElement("div");
+        notification.className =
+          "fixed top-4 right-4 bg-orange-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full";
+        notification.innerHTML = `
+          <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            <div>
+              <div class="font-medium">Báo cáo đã gửi!</div>
+              <div class="text-sm">${selectedType} - ${booking.Ma_phong}</div>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.classList.remove("translate-x-full");
+        }, 100);
+
+        setTimeout(() => {
+          notification.classList.add("translate-x-full");
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 300);
+        }, 4000);
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto" />
+            <p className="mt-4 text-gray-600">Đang tải lịch phòng...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -234,7 +324,7 @@ const SecurityCalendar = () => {
                   <div className="p-3 text-center font-medium text-gray-700">
                     Giờ
                   </div>
-                  {rooms.map((room) => (
+                  {displayRooms.map((room) => (
                     <div
                       key={room.id}
                       className="p-3 text-center font-medium text-gray-700 bg-gray-100 rounded"
@@ -256,7 +346,7 @@ const SecurityCalendar = () => {
                     <div className="p-3 text-center font-medium text-gray-600 bg-gray-50 rounded flex items-center justify-center">
                       {timeSlot}
                     </div>
-                    {rooms.map((room) => {
+                    {displayRooms.map((room) => {
                       const booking = getBookingForSlot(room.id, timeSlot);
                       return (
                         <div
@@ -271,24 +361,25 @@ const SecurityCalendar = () => {
                           {booking ? (
                             <div className="text-xs">
                               <div className="font-semibold text-blue-900 mb-1">
-                                {booking.booker}
+                                {booking.Ten_nguoi_dung}
                               </div>
                               <div className="text-blue-700 mb-1">
-                                {booking.purpose}
+                                {booking.Ly_do}
                               </div>
                               <div className="flex items-center justify-between">
                                 <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                  {booking.attendees} người
+                                  {booking.Ma_phong}
                                 </Badge>
                                 <Badge
-                                  variant={
-                                    booking.role === "Giảng viên"
-                                      ? "default"
-                                      : "secondary"
+                                  className={
+                                    booking.trang_thai === "confirmed"
+                                      ? "bg-green-100 text-green-800 text-xs"
+                                      : "bg-yellow-100 text-yellow-800 text-xs"
                                   }
-                                  className="text-xs"
                                 >
-                                  {booking.role}
+                                  {booking.trang_thai === "confirmed"
+                                    ? "Đã duyệt"
+                                    : "Chờ duyệt"}
                                 </Badge>
                               </div>
                             </div>
@@ -330,8 +421,10 @@ const SecurityCalendar = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">2</div>
-              <p className="text-xs text-gray-500 mt-1">Giờ hiện tại</p>
+              <div className="text-2xl font-bold text-green-600">
+                {bookings.filter((b) => b.trang_thai === "confirmed").length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Đã xác nhận</p>
             </CardContent>
           </Card>
 
@@ -342,7 +435,9 @@ const SecurityCalendar = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">4</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {rooms.filter((r) => r.trang_thai === "available").length}
+              </div>
               <p className="text-xs text-gray-500 mt-1">Có thể đặt</p>
             </CardContent>
           </Card>
@@ -350,12 +445,14 @@ const SecurityCalendar = () => {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Tỷ lệ sử dụng
+                Chờ duyệt
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">75%</div>
-              <p className="text-xs text-gray-500 mt-1">Trung bình ngày</p>
+              <div className="text-2xl font-bold text-purple-600">
+                {bookings.filter((b) => b.trang_thai === "pending").length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Yêu cầu mới</p>
             </CardContent>
           </Card>
         </div>
@@ -379,74 +476,57 @@ const SecurityCalendar = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm font-medium text-gray-600">Phòng</div>
-                  <div className="text-sm">{selectedBooking.room}</div>
+                  <div className="text-sm">{selectedBooking.Ma_phong}</div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-600">
-                    Tòa nhà
-                  </div>
-                  <div className="text-sm">{selectedBooking.building}</div>
+                  <div className="text-sm font-medium text-gray-600">Ngày</div>
+                  <div className="text-sm">{selectedBooking.Ngay}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm font-medium text-gray-600">
-                    Thời gian
-                  </div>
-                  <div className="text-sm">{selectedBooking.time}</div>
+                  <div className="text-sm font-medium text-gray-600">Ca</div>
+                  <div className="text-sm">{selectedBooking.Ca}</div>
                 </div>
                 <div>
                   <div className="text-sm font-medium text-gray-600">
-                    Số người
+                    Người đặt
                   </div>
                   <div className="text-sm">
-                    {selectedBooking.attendees} người
+                    {selectedBooking.Ten_nguoi_dung}
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <div className="text-sm font-medium text-gray-600 mb-1">
-                  Người đặt
-                </div>
-                <div className="text-sm">{selectedBooking.booker}</div>
-                <Badge
-                  variant={
-                    selectedBooking.role === "Giảng viên"
-                      ? "default"
-                      : "secondary"
-                  }
-                  className="text-xs mt-1"
-                >
-                  {selectedBooking.role}
-                </Badge>
               </div>
 
               <div>
                 <div className="text-sm font-medium text-gray-600 mb-1">
                   Mục đích
                 </div>
-                <div className="text-sm">{selectedBooking.purpose}</div>
+                <div className="text-sm">{selectedBooking.Ly_do}</div>
               </div>
 
               <div className="grid grid-cols-1 gap-2">
                 <div className="flex items-center text-sm">
-                  <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                  {selectedBooking.phone}
-                </div>
-                <div className="flex items-center text-sm">
                   <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                  {selectedBooking.email}
+                  {selectedBooking.Email}
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t">
-                <Badge className="bg-green-100 text-green-800">
-                  ✓ Đã xác nhận
+                <Badge
+                  className={
+                    selectedBooking.trang_thai === "confirmed"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }
+                >
+                  {selectedBooking.trang_thai === "confirmed"
+                    ? "✓ Đã xác nhận"
+                    : "⏳ Chờ duyệt"}
                 </Badge>
                 <div className="text-xs text-gray-500">
-                  Mã: CMC{selectedBooking.id.padStart(6, "0")}
+                  Mã: {selectedBooking.Ma_nguoi_dung}
                 </div>
               </div>
 
@@ -461,45 +541,7 @@ const SecurityCalendar = () => {
                     variant="outline"
                     size="sm"
                     className="flex items-center justify-center bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                    onClick={() => {
-                      console.log("📋 Check-in:", selectedBooking.id);
-
-                      // Create success notification
-                      const notification = document.createElement("div");
-                      notification.className =
-                        "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full";
-                      notification.innerHTML = `
-                        <div class="flex items-center">
-                          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                          </svg>
-                          <div>
-                            <div class="font-medium">Check-in thành công!</div>
-                            <div class="text-sm">${selectedBooking.room} - ${selectedBooking.booker}</div>
-                          </div>
-                        </div>
-                      `;
-
-                      document.body.appendChild(notification);
-
-                      // Animate in
-                      setTimeout(() => {
-                        notification.classList.remove("translate-x-full");
-                      }, 100);
-
-                      // Auto-remove after 3 seconds
-                      setTimeout(() => {
-                        notification.classList.add("translate-x-full");
-                        setTimeout(() => {
-                          document.body.removeChild(notification);
-                        }, 300);
-                      }, 3000);
-
-                      // Also show traditional alert as backup
-                      alert(
-                        `✅ Check-in thành công cho ${selectedBooking.room}\n\nThời gian: ${new Date().toLocaleTimeString("vi-VN")}\nNgười đặt: ${selectedBooking.booker}`,
-                      );
-                    }}
+                    onClick={() => handleCheckIn(selectedBooking)}
                   >
                     <CheckCircle className="h-4 w-4 mr-1" />
                     Check-in
@@ -509,71 +551,7 @@ const SecurityCalendar = () => {
                     variant="outline"
                     size="sm"
                     className="flex items-center justify-center text-orange-600 border-orange-200 hover:bg-orange-50"
-                    onClick={() => {
-                      // Create a better reporting interface
-                      const reportTypes = [
-                        "Thiết bị hỏng hóc",
-                        "Vệ sinh không đảm bảo",
-                        "Mất trật tự",
-                        "Khác",
-                      ];
-
-                      const reportType = prompt(
-                        `📝 Chọn loại báo cáo:\n${reportTypes.map((type, i) => `${i + 1}. ${type}`).join("\n")}\n\nNhập số (1-${reportTypes.length}):`,
-                      );
-
-                      if (reportType && reportType.match(/^[1-4]$/)) {
-                        const selectedType =
-                          reportTypes[parseInt(reportType) - 1];
-                        const detail = prompt(
-                          `📋 Chi tiết báo cáo về "${selectedType}":`,
-                        );
-
-                        if (detail) {
-                          console.log("📋 Incident report:", {
-                            bookingId: selectedBooking.id,
-                            room: selectedBooking.room,
-                            type: selectedType,
-                            detail: detail,
-                            reporter: "Bảo vệ",
-                            timestamp: new Date().toISOString(),
-                          });
-
-                          // Create success notification
-                          const notification = document.createElement("div");
-                          notification.className =
-                            "fixed top-4 right-4 bg-orange-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full";
-                          notification.innerHTML = `
-                            <div class="flex items-center">
-                              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                              </svg>
-                              <div>
-                                <div class="font-medium">Báo cáo đã gửi!</div>
-                                <div class="text-sm">${selectedType} - ${selectedBooking.room}</div>
-                              </div>
-                            </div>
-                          `;
-
-                          document.body.appendChild(notification);
-
-                          setTimeout(() => {
-                            notification.classList.remove("translate-x-full");
-                          }, 100);
-
-                          setTimeout(() => {
-                            notification.classList.add("translate-x-full");
-                            setTimeout(() => {
-                              document.body.removeChild(notification);
-                            }, 300);
-                          }, 4000);
-
-                          alert(
-                            `📝 Báo cáo đã được ghi nhận!\n\nPhòng: ${selectedBooking.room}\nLoại: ${selectedType}\nChi tiết: ${detail}\nThời gian: ${new Date().toLocaleString("vi-VN")}`,
-                          );
-                        }
-                      }
-                    }}
+                    onClick={() => handleReport(selectedBooking)}
                   >
                     <AlertCircle className="h-4 w-4 mr-1" />
                     Báo cáo
