@@ -274,22 +274,77 @@ const Login = () => {
             {/* Debug Section */}
             <div className="border-t pt-2 mt-2">
               <div className="text-xs text-gray-500 mb-1">Debug Tools:</div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs py-1 h-6 w-full"
-                onClick={() => {
-                  // @ts-ignore
-                  if (window.debugCMC) {
+              <div className="space-y-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs py-1 h-6 w-full"
+                  onClick={() => {
                     // @ts-ignore
-                    window.debugCMC.checkConnection();
-                  } else {
-                    console.log("Debug tools not available yet");
-                  }
-                }}
-              >
-                Check Connection & Users
-              </Button>
+                    if (window.debugCMC) {
+                      // @ts-ignore
+                      window.debugCMC.checkConnection();
+                    } else {
+                      console.log("Debug tools not available yet");
+                    }
+                  }}
+                >
+                  Check Connection & Users
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs py-1 h-6 w-full bg-red-50"
+                  onClick={() => {
+                    console.log("🚨 DIRECT ACCESS TEST:");
+                    // @ts-ignore
+                    if (window.usersCollection) {
+                      // @ts-ignore
+                      console.log("Users collection:", window.usersCollection);
+                      // @ts-ignore
+                      console.log("Length:", window.usersCollection.length);
+                      // @ts-ignore
+                      window.usersCollection.forEach((user, i) => {
+                        console.log(
+                          `${i}: ${user.email} - ${user.ten_nguoi_dung}`,
+                        );
+                      });
+                    } else {
+                      console.log("❌ usersCollection not available on window");
+                    }
+
+                    // Also test direct import
+                    import("@/lib/mongodb").then((mongodb) => {
+                      console.log("📦 Direct import test:");
+                      mongodb.debugUsers();
+                    });
+                  }}
+                >
+                  Direct Users Test
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs py-1 h-6 w-full bg-yellow-50"
+                  onClick={async () => {
+                    console.log("🧪 TEST LOGIN WITHOUT FORM:");
+                    const { userService } = await import("@/lib/mongodb");
+                    const testResult = await userService.findByEmail(
+                      "BIT230372@st.cmc.edu.vn",
+                    );
+                    console.log("Test result:", testResult);
+                    if (testResult) {
+                      alert(`✅ Found user: ${testResult.ten_nguoi_dung}`);
+                    } else {
+                      alert("❌ User not found in direct test");
+                    }
+                  }}
+                >
+                  Test Direct Login
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
