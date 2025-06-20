@@ -27,6 +27,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 
 // Mock booking data
@@ -177,6 +180,17 @@ const SecurityCalendar = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back to Home Button */}
+        <div className="mb-6">
+          <Link
+            to="/"
+            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Quay về trang chủ
+          </Link>
+        </div>
+
         {/* Calendar Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -349,14 +363,14 @@ const SecurityCalendar = () => {
 
       {/* Booking Details Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <User className="h-5 w-5 mr-2" />
               Chi tiết đặt phòng
             </DialogTitle>
             <DialogDescription>
-              Thông tin chi tiết về lịch đặt phòng
+              Thông tin chi tiết về lịch đặt phòng và tính năng kiểm tra
             </DialogDescription>
           </DialogHeader>
 
@@ -433,6 +447,56 @@ const SecurityCalendar = () => {
                 </Badge>
                 <div className="text-xs text-gray-500">
                   Mã: CMC{selectedBooking.id.padStart(6, "0")}
+                </div>
+              </div>
+
+              {/* Check-in and Report Actions */}
+              <div className="pt-4 border-t space-y-3">
+                <div className="text-sm font-medium text-gray-900">
+                  Hành động bảo vệ
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center justify-center"
+                    onClick={() => {
+                      console.log("📋 Check-in:", selectedBooking.id);
+                      alert(
+                        `✅ Check-in thành công cho ${selectedBooking.room}\n\nThời gian: ${new Date().toLocaleTimeString("vi-VN")}\nNgười đặt: ${selectedBooking.booker}`,
+                      );
+                    }}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Check-in
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center justify-center text-orange-600 border-orange-200 hover:bg-orange-50"
+                    onClick={() => {
+                      const report = prompt("📝 Nhập báo cáo sự cố (nếu có):");
+                      if (report) {
+                        console.log(
+                          "📋 Incident report for:",
+                          selectedBooking.id,
+                          report,
+                        );
+                        alert(
+                          `📝 Báo cáo đã được ghi nhận!\n\nPhòng: ${selectedBooking.room}\nSự cố: ${report}\nThời gian: ${new Date().toLocaleString("vi-VN")}`,
+                        );
+                      }
+                    }}
+                  >
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    Báo cáo
+                  </Button>
+                </div>
+
+                <div className="text-xs text-gray-500 text-center">
+                  Click "Check-in" khi sinh viên/GV đến sử dụng phòng
                 </div>
               </div>
             </div>
