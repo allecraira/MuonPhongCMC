@@ -176,6 +176,31 @@ const BookingForm = () => {
         attendees: formData.attendees,
       });
 
+      // Show approval notification
+      if (newBooking.trang_thai === "confirmed") {
+        // Create success notification for auto-approval
+        const notification = document.createElement("div");
+        notification.className =
+          "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
+        notification.innerHTML = `
+          <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <div>
+              <div class="font-medium">Đặt phòng được duyệt tự động!</div>
+              <div class="text-sm">Phòng trống - Email xác nhận đã gửi</div>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 4000);
+      }
+
       if (emailResult.approved || newBooking.trang_thai === "confirmed") {
         navigate("/booking/confirmation", {
           state: {
