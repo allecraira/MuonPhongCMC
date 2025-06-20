@@ -112,6 +112,29 @@ const RoomDetails = () => {
   // Get room data from location state or find by ID
   const room = location.state?.room || allRooms.find((r) => r.id === id);
 
+  // Helper function to parse equipment from MongoDB format
+  const parseEquipment = (room: any): string[] => {
+    if (room?.equipment) {
+      return room.equipment; // Original format
+    }
+    if (room?.Co_so_vat_chat) {
+      try {
+        // MongoDB format - parse JSON string
+        const cleaned = room.Co_so_vat_chat.replace(/'/g, '"');
+        return JSON.parse(cleaned);
+      } catch {
+        // Fallback: split by comma
+        return room.Co_so_vat_chat.split(",").map((item: string) =>
+          item.trim().replace(/[\[\]']/g, ""),
+        );
+      }
+    }
+    return []; // Default empty array
+  };
+
+  // Get equipment array safely
+  const equipment = parseEquipment(room);
+
   if (!room) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -174,7 +197,7 @@ const RoomDetails = () => {
                   {room.status === "available"
                     ? "Có sẵn"
                     : room.status === "booked"
-                      ? "Đã đặt"
+                      ? "Đã đ���t"
                       : "Bảo trì"}
                 </Badge>
               </div>
