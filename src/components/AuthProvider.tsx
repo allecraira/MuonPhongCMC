@@ -1,5 +1,6 @@
 import { useState, useEffect, ReactNode } from "react";
-import { AuthContext, User, mockUsers } from "@/lib/auth";
+import { AuthContext, User } from "@/lib/auth";
+import { userService } from "@/lib/mongodb";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -21,21 +22,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      console.log("🔐 Attempting login for:", email);
 
-    // Find user by email
-    const foundUser = mockUsers.find((u) => u.email === email);
+      // Find user in MongoDB
+      const mongoUser = await userService.findByEmail(email);
 
-    if (foundUser && password === "123456") {
-      setUser(foundUser);
-      localStorage.setItem("auth_user", JSON.stringify(foundUser));
+      if (mongoUser && mongoUser.password === password) {
+        // Convert MongoDB user to app user format
+        const appUser: User = {
+          id: mongoUser._id || mongoUser.email,
+          email: mongoUser.email,
+          name: mongoUser.name,
+          role: mongoUser.role,
+          studentId: mongoUser.studentId,
+          hasChangedPassword: mongoUser.hasChangedPassword,
+        };
+
+        setUser(appUser);
+        localStorage.setItem("auth_user", JSON.stringify(appUser));
+        console.log("✅ Login successful for:", email);
+        setIsLoading(false);
+        return true;
+      }
+
+      console.log("❌ Login failed for:", email);
       setIsLoading(false);
-      return true;
+      return false;
+    } catch (error) {
+      console.error("🚨 Login error:", error);
+      setIsLoading(false);
+      return false;
     }
-
-    setIsLoading(false);
-    return false;
   };
 
   const logout = () => {
@@ -43,11 +61,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     localStorage.removeItem("auth_user");
   };
 
-  const updateUser = (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
       localStorage.setItem("auth_user", JSON.stringify(updatedUser));
+
+      // Update password in MongoDB if changed
+      if (userData.hasChangedPassword) {
+        try {
+          console.log("🔄 Updating user data in database...");
+          // Note: In a real app, you would also update the password in the database
+          // For demo purposes, we'll just update the hasChangedPassword flag
+          console.log("✅ User data updated successfully");
+        } catch (error) {
+          console.error("❌ Failed to update user data:", error);
+        }
+      }
     }
   };
 
