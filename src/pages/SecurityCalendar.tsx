@@ -460,9 +460,42 @@ const SecurityCalendar = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center justify-center"
+                    className="flex items-center justify-center bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                     onClick={() => {
                       console.log("📋 Check-in:", selectedBooking.id);
+
+                      // Create success notification
+                      const notification = document.createElement("div");
+                      notification.className =
+                        "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full";
+                      notification.innerHTML = `
+                        <div class="flex items-center">
+                          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                          </svg>
+                          <div>
+                            <div class="font-medium">Check-in thành công!</div>
+                            <div class="text-sm">${selectedBooking.room} - ${selectedBooking.booker}</div>
+                          </div>
+                        </div>
+                      `;
+
+                      document.body.appendChild(notification);
+
+                      // Animate in
+                      setTimeout(() => {
+                        notification.classList.remove("translate-x-full");
+                      }, 100);
+
+                      // Auto-remove after 3 seconds
+                      setTimeout(() => {
+                        notification.classList.add("translate-x-full");
+                        setTimeout(() => {
+                          document.body.removeChild(notification);
+                        }, 300);
+                      }, 3000);
+
+                      // Also show traditional alert as backup
                       alert(
                         `✅ Check-in thành công cho ${selectedBooking.room}\n\nThời gian: ${new Date().toLocaleTimeString("vi-VN")}\nNgười đặt: ${selectedBooking.booker}`,
                       );
