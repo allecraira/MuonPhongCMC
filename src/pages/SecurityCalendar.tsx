@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -408,7 +408,7 @@ const SecurityCalendar = () => {
 
               <div>
                 <div className="text-sm font-medium text-gray-600 mb-1">
-                  Người ��ặt
+                  Người đặt
                 </div>
                 <div className="text-sm">{selectedBooking.booker}</div>
                 <Badge
