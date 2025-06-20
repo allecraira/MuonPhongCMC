@@ -197,7 +197,7 @@ const RoomDetails = () => {
                   {room.status === "available"
                     ? "Có sẵn"
                     : room.status === "booked"
-                      ? "Đã đ���t"
+                      ? "Đã đặt"
                       : "Bảo trì"}
                 </Badge>
               </div>
@@ -240,7 +240,7 @@ const RoomDetails = () => {
                         Thiết bị có sẵn
                       </h4>
                       <div className="grid grid-cols-2 gap-4">
-                        {room.equipment.map((item, index) => (
+                        {equipment.map((item, index) => (
                           <div
                             key={index}
                             className="flex items-center space-x-3"
@@ -457,7 +457,7 @@ const RoomDetails = () => {
                 </Button>
 
                 <div className="text-center text-sm text-gray-500">
-                  Vui lòng chọn ngày để đặt phòng trước
+                  Vui lòng chọn ngày để đ���t phòng trước
                 </div>
               </CardContent>
             </Card>
