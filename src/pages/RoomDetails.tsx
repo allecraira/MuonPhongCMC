@@ -265,7 +265,7 @@ const RoomDetails = () => {
                               {![
                                 "Máy chiếu",
                                 "Wifi",
-                                "Điều h��a",
+                                "Điều hòa",
                                 "Bảng trắng",
                               ].includes(item) && (
                                 <CheckCircle className="h-4 w-4 text-gray-600" />
@@ -422,7 +422,7 @@ const RoomDetails = () => {
               <TabsContent value="schedule" className="mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Lịch s�� dụng phòng</CardTitle>
+                    <CardTitle>Lịch sử dụng phòng</CardTitle>
                     <CardDescription>
                       Xem lịch trình và tình trạng phòng
                     </CardDescription>
