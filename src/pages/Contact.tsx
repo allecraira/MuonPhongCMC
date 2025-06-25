@@ -91,7 +91,7 @@ const Contact = () => {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1516321310762-479437144403?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')`,
+            backgroundImage: `url('/images/Contact.jpg')`,
           }}
         />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/subtle-dots.png')] opacity-10" />
@@ -527,7 +527,7 @@ const Contact = () => {
             className="border-t border-gray-800 mt-12 pt-8 text-center"
           >
             <p className="text-gray-400 text-sm">
-              © 2025 Trường Đại học CMC. Tất cả quyền được bảo lưu.
+              © 2025 Trường Đại học CMC. Tất cả quyền được hội sở hữu bởi Hội Bàn Tròn hẹ hẹ hẹ 
             </p>
           </motion.div>
         </div>

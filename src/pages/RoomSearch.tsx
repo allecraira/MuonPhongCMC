@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
@@ -29,7 +29,11 @@ import {
   Projector,
   Coffee,
   Building2,
+  X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { debounce } from "lodash";
 
 const RoomSearch = () => {
   const [allRooms, setAllRooms] = useState<MongoRoom[]>([]);
@@ -40,6 +44,36 @@ const RoomSearch = () => {
     building: "all",
     capacity: "all",
   });
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((filters: typeof searchFilters) => {
+      let filtered = allRooms;
+
+      if (filters.name) {
+        filtered = filtered.filter((room) =>
+          room.Ma_phong.toLowerCase().includes(filters.name.toLowerCase()),
+        );
+      }
+
+      if (filters.building && filters.building !== "all") {
+        filtered = filtered.filter((room) => room.Co_so === filters.building);
+      }
+
+      if (filters.capacity && filters.capacity !== "all") {
+        filtered = filtered.filter((room) => {
+          if (filters.capacity === "small") return room.Suc_chua <= 30;
+          if (filters.capacity === "medium")
+            return room.Suc_chua > 30 && room.Suc_chua <= 60;
+          if (filters.capacity === "large") return room.Suc_chua > 60;
+          return true;
+        });
+      }
+
+      setFilteredRooms(filtered);
+    }, 300),
+    [allRooms],
+  );
 
   // Load rooms from MongoDB on component mount
   useEffect(() => {
@@ -61,58 +95,57 @@ const RoomSearch = () => {
     loadRooms();
   }, []);
 
-  const handleSearch = () => {
-    let filtered = allRooms;
-
-    if (searchFilters.name) {
-      filtered = filtered.filter((room) =>
-        room.Ma_phong.toLowerCase().includes(searchFilters.name.toLowerCase()),
-      );
-    }
-
-    if (searchFilters.building && searchFilters.building !== "all") {
-      filtered = filtered.filter(
-        (room) => room.Co_so === searchFilters.building,
-      );
-    }
-
-    if (searchFilters.capacity && searchFilters.capacity !== "all") {
-      filtered = filtered.filter((room) => {
-        if (searchFilters.capacity === "small") return room.Suc_chua <= 30;
-        if (searchFilters.capacity === "medium")
-          return room.Suc_chua > 30 && room.Suc_chua <= 60;
-        if (searchFilters.capacity === "large") return room.Suc_chua > 60;
-        return true;
-      });
-    }
-
-    setFilteredRooms(filtered);
-  };
+  // Trigger search when filters change
+  useEffect(() => {
+    debouncedSearch(searchFilters);
+  }, [searchFilters, debouncedSearch]);
 
   const handleFilterChange = (field: string, value: string) => {
     setSearchFilters((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleClearFilters = () => {
+    setSearchFilters({
+      name: "",
+      building: "all",
+      capacity: "all",
+    });
+  };
+
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case "available":
-        return <Badge className="bg-green-100 text-green-800">Có sẵn</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+            Có sẵn
+          </Badge>
+        );
       case "booked":
-        return <Badge className="bg-red-100 text-red-800">Đã đặt</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-800 hover:bg-red-200">
+            Đã đặt
+          </Badge>
+        );
       case "maintenance":
-        return <Badge className="bg-yellow-100 text-yellow-800">Bảo trì</Badge>;
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+            Bảo trì
+          </Badge>
+        );
       default:
-        return <Badge className="bg-green-100 text-green-800">Có sẵn</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+            Có sẵn
+          </Badge>
+        );
     }
   };
 
   const parseEquipment = (equipmentString: string): string[] => {
     try {
-      // Remove quotes and parse the array string
       const cleaned = equipmentString.replace(/'/g, '"');
       return JSON.parse(cleaned);
     } catch {
-      // Fallback: split by comma
       return equipmentString
         .split(",")
         .map((item) => item.trim().replace(/[\[\]']/g, ""));
@@ -120,61 +153,84 @@ const RoomSearch = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-gray-100">
       <Header />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Navigation */}
-        <div className="mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
           <Link
             to="/"
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+            aria-label="Quay lại trang chủ"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-5 w-5 mr-2" />
             Quay lại trang chủ
           </Link>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Danh sách phòng
+        <div className="mb-10">
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-3">
+            Tìm kiếm phòng
           </h1>
-          <p className="text-gray-600">
-            Tìm kiếm và đặt phòng phù hợp với nhu cầu của bạn
+          <p className="text-lg text-gray-600">
+            Khám phá và đặt phòng phù hợp với nhu cầu của bạn
           </p>
         </div>
 
-        {/* Search Filters */}
-        <Card className="mb-8">
+        <Card className="mb-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Search className="h-5 w-5 mr-2" />
-              Tìm kiếm phòng
+            <CardTitle className="flex items-center text-2xl">
+              <Search className="h-6 w-6 mr-3 text-blue-600" />
+              Bộ lọc tìm kiếm
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
                   Tên phòng
                 </label>
-                <Input
-                  placeholder="Nhập tên phòng..."
-                  value={searchFilters.name}
-                  onChange={(e) => handleFilterChange("name", e.target.value)}
-                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="name"
+                          placeholder="Nhập mã phòng..."
+                          value={searchFilters.name}
+                          onChange={(e) =>
+                            handleFilterChange("name", e.target.value)
+                          }
+                          className="pl-10 transition-all duration-200"
+                          aria-label="Tìm kiếm theo mã phòng"
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Nhập mã phòng (ví dụ: 101, 202) để tìm kiếm</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="building"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
                   Tòa nhà
                 </label>
                 <Select
                   value={searchFilters.building}
-                  onValueChange={(value) =>
-                    handleFilterChange("building", value)
-                  }
+                  onValueChange={(value) => handleFilterChange("building", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger
+                    id="building"
+                    className="transition-all duration-200"
+                    aria-label="Chọn tòa nhà"
+                  >
                     <SelectValue placeholder="Chọn tòa nhà" />
                   </SelectTrigger>
                   <SelectContent>
@@ -186,16 +242,21 @@ const RoomSearch = () => {
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="capacity"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
                   Sức chứa
                 </label>
                 <Select
                   value={searchFilters.capacity}
-                  onValueChange={(value) =>
-                    handleFilterChange("capacity", value)
-                  }
+                  onValueChange={(value) => handleFilterChange("capacity", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger
+                    id="capacity"
+                    className="transition-all duration-200"
+                    aria-label="Chọn sức chứa"
+                  >
                     <SelectValue placeholder="Số người" />
                   </SelectTrigger>
                   <SelectContent>
@@ -206,44 +267,54 @@ const RoomSearch = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-end">
+              <div className="flex items-end gap-4">
                 <Button
-                  onClick={handleSearch}
-                  className="w-full bg-cmcBlue-600 hover:bg-cmcBlue-700"
+                  onClick={handleClearFilters}
+                  variant="outline"
+                  className="w-full transition-transform hover:scale-105"
+                  aria-label="Xóa bộ lọc"
                 >
-                  Tìm kiếm
+                  <X className="h-5 w-5 mr-2" />
+                  Xóa bộ lọc
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Room Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {isLoading ? (
-            // Loading skeleton
             Array.from({ length: 6 }).map((_, index) => (
-              <Card key={index} className="overflow-hidden">
-                <div className="aspect-video bg-gray-200 animate-pulse"></div>
+              <Card
+                key={index}
+                className="overflow-hidden animate-pulse shadow-md"
+              >
+                <div className="aspect-video bg-gray-200"></div>
                 <CardHeader>
-                  <div className="h-6 bg-gray-200 rounded animate-pulse mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
+                  <div className="h-7 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mt-2"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 </CardContent>
               </Card>
             ))
           ) : filteredRooms.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <div className="text-gray-500">
-                <Building2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium mb-2">
-                  Không tìm thấy phòng
-                </h3>
-                <p>Thử điều chỉnh tiêu chí tìm kiếm để xem thêm kết quả</p>
-              </div>
+            <div className="col-span-full text-center py-16 bg-white rounded-xl shadow-md">
+              <Building2 className="h-16 w-16 mx-auto mb-4 text-blue-300" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                Không tìm thấy phòng
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Thử xóa bộ lọc hoặc thay đổi tiêu chí tìm kiếm để xem thêm kết quả.
+              </p>
+              <Button
+                onClick={handleClearFilters}
+                className="bg-blue-600 hover:bg-blue-700 transition-transform hover:scale-105"
+              >
+                Xóa bộ lọc
+              </Button>
             </div>
           ) : (
             filteredRooms.map((room) => {
@@ -252,9 +323,13 @@ const RoomSearch = () => {
               return (
                 <Card
                   key={room._id}
-                  className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  className="overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                 >
-                  <Link to={`/rooms/${room.So_phong}`} state={{ room }}>
+                  <Link
+                    to={`/rooms/${room.So_phong}`}
+                    state={{ room }}
+                    aria-label={`Xem chi tiết phòng ${room.So_phong}`}
+                  >
                     <div className="aspect-video bg-gray-200 relative">
                       <div className="absolute top-4 left-4">
                         {getStatusBadge(room.trang_thai)}
@@ -274,55 +349,63 @@ const RoomSearch = () => {
                         }}
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-gray-200 hidden">
-                        <div className="text-gray-400">📷 Hình ảnh phòng</div>
+                        <div className="text-gray-400 text-lg">
+                          📷 Không có hình ảnh
+                        </div>
                       </div>
                     </div>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl">
+                        <CardTitle className="text-2xl font-semibold">
                           Phòng {room.So_phong}
                         </CardTitle>
-                        <Badge variant="outline">
-                          <Users className="h-3 w-3 mr-1" />
+                        <Badge
+                          variant="outline"
+                          className="text-sm border-blue-200"
+                        >
+                          <Users className="h-4 w-4 mr-1 text-blue-600" />
                           {room.Suc_chua} người
                         </Badge>
                       </div>
-                      <CardDescription className="flex items-center text-gray-600">
-                        <MapPin className="h-4 w-4 mr-1" />
+                      <CardDescription className="flex items-center text-gray-600 text-base">
+                        <MapPin className="h-5 w-5 mr-2 text-blue-600" />
                         Tòa {room.Co_so} - {room["Dien_tich (m2)"]}m²
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex flex-wrap gap-2 mb-4">
+                      <div className="flex flex-wrap gap-3 mb-4">
                         {equipment.slice(0, 3).map((item, index) => (
                           <Badge
                             key={index}
                             variant="secondary"
-                            className="text-xs"
+                            className="text-sm px-3 py-1 bg-blue-100 text-blue-800"
                           >
                             {item === "Máy chiếu" && (
-                              <Monitor className="h-3 w-3 mr-1" />
+                              <Monitor className="h-4 w-4 mr-1" />
                             )}
                             {item === "Wifi" && (
-                              <Wifi className="h-3 w-3 mr-1" />
+                              <Wifi className="h-4 w-4 mr-1" />
                             )}
                             {item === "Điều hòa" && (
-                              <Coffee className="h-3 w-3 mr-1" />
+                              <Coffee className="h-4 w-4 mr-1" />
                             )}
                             {item === "Bảng trắng" && (
-                              <Projector className="h-3 w-3 mr-1" />
+                              <Projector className="h-4 w-4 mr-1" />
                             )}
                             {item}
                           </Badge>
                         ))}
                         {equipment.length > 3 && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge
+                            variant="secondary"
+                            className="text-sm px-3 py-1 bg-blue-100 text-blue-800"
+                          >
                             +{equipment.length - 3} khác
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {room.Mo_ta}
+                      <p className="text-gray-600 line-clamp-2 text-base">
+                        {room.Mo_ta || "Phòng học hiện đại, phù hợp cho học tập và hội thảo."}
                       </p>
                     </CardContent>
                   </Link>
@@ -332,12 +415,13 @@ const RoomSearch = () => {
           )}
         </div>
 
-        {/* Summary */}
         {!isLoading && filteredRooms.length > 0 && (
-          <div className="mt-8 text-center text-gray-600">
+          <div className="mt-10 text-center text-gray-600 text-lg">
             <p>
-              Hiển thị {filteredRooms.length} phòng trong tổng số{" "}
-              {allRooms.length} phòng
+              Hiển thị{" "}
+              <span className="font-semibold">{filteredRooms.length}</span> phòng
+              trong tổng số{" "}
+              <span className="font-semibold">{allRooms.length}</span> phòng
             </p>
           </div>
         )}

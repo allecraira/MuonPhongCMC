@@ -96,6 +96,15 @@ const Login = () => {
       icon: "⚙️",
       gradient: "from-red-500 to-red-600",
     },
+    {
+      label: "security",
+      sublabel: "System",
+      code: "123456",
+      email: "security@cmc.edu.vn",
+      password: "123456",
+      icon: "👻",
+      gradient: "from-yellow-400 to-yellow-500",
+    },
   ];
 
   const fillDemoAccount = (account: (typeof demoAccounts)[0]) => {

@@ -504,7 +504,7 @@ const BookingForm = () => {
                 {/* Room Image */}
                 <div className="aspect-video rounded-lg overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1577412647305-991150c7d163?w=400&h=200&fit=crop&crop=center"
+                    src="/images/Room_pre.jpg" // Replace with actual room image URL
                     alt="Room preview"
                     className="w-full h-full object-cover"
                   />

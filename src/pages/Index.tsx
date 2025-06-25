@@ -90,7 +90,7 @@ const Index = () => {
       >
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1562774053-701939374585?w=1600&h=800&fit=crop&crop=center"
+            src="/images/Main.webp"
             alt="CMC University Campus"
             className="w-full h-full object-cover opacity-70 transition-opacity duration-1000"
           />
@@ -194,7 +194,7 @@ const Index = () => {
               variants={fadeIn}
             >
               <img
-                src="https://images.unsplash.com/photo-1516321310762-959200db5b04?w=800&h=600&fit=crop"
+                src="/images/Banner.jpg"
                 alt="CMC University Building"
                 className="w-full h-80 object-cover transform hover:scale-105 transition-transform duration-500"
               />
@@ -412,7 +412,7 @@ const Index = () => {
                   "Văn phòng hành chính",
                   "Thư viện trung tâm",
                 ],
-                image: "https://images.unsplash.com/photo-1567496898454-37e0bc652568?w=800&h=600&fit=crop",
+                image: "/images/CS1.1.jpg",
               },
               {
                 title: "Tòa CS2",
@@ -423,7 +423,7 @@ const Index = () => {
                   "Phục vụ nghỉ ngơi",
                   "Cảng lưu sinh viên",
                 ],
-                image: "https://images.unsplash.com/photo-1516321310762-959200db5b04?w=800&h=600&fit=crop",
+                image: "/images/CS1.jpg",
               },
               {
                 title: "Tòa CS3",
@@ -434,7 +434,7 @@ const Index = () => {
                   "Studio thiết kế",
                   "Trung tâm sức khỏe nghiên",
                 ],
-                image: "https://images.unsplash.com/photo-1516321310762-959200db5b04?w=800&h=600&fit=crop",
+                image: "/images/CS3.jpg",
               },
             ].map((facility, index) => (
               <motion.div
@@ -611,7 +611,7 @@ const Index = () => {
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center">
             <p className="text-gray-400 text-sm">
-              © 2024 Trường Đại học CMC. Tất cả quyền được bảo lưu.
+              © 2025 Trường Đại học CMC. Tất cả quyền được hội sở hữu bởi Hội Bàn Tròn hẹ hẹ hẹ 
             </p>
           </div>
         </div>
