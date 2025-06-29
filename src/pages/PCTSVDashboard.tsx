@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useNotification } from "@/contexts/NotificationContext";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,8 +32,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import {
+  userService,
   roomService,
   bookingService,
+  MongoUser,
   MongoRoom,
   MongoBookingHistory,
 } from "@/lib/mongodb";
@@ -41,23 +44,29 @@ import {
   sendBookingRejection,
 } from "@/lib/emailService";
 import {
+  Users,
   Building2,
   Calendar,
   BarChart3,
-  Plus,
+  Settings,
+  UserPlus,
   Edit,
   Trash2,
-  Users,
+  Shield,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Hash,
+  Loader2,
+  Plus,
   CheckCircle,
   XCircle,
-  Clock,
-  ArrowLeft,
-  Shield,
-  Loader2,
 } from "lucide-react";
 
 const PCTSVDashboard = () => {
   const { user, logout } = useAuth();
+  const { showBoss, showError, showWarning, showSuccess } = useNotification();
+  const [users, setUsers] = useState<MongoUser[]>([]);
   const [rooms, setRooms] = useState<MongoRoom[]>([]);
   const [bookings, setBookings] = useState<MongoBookingHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +75,20 @@ const PCTSVDashboard = () => {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [selectedBooking, setSelectedBooking] =
     useState<MongoBookingHistory | null>(null);
+  const [showAddRoomDialog, setShowAddRoomDialog] = useState(false);
+  const [newRoom, setNewRoom] = useState<Partial<MongoRoom>>({
+    Ma_phong: "",
+    So_phong: 0,
+    Co_so: "CS2",
+    Suc_chua: 0,
+    "Dien_tich (m2)": 0,
+    trang_thai: "available",
+    Co_so_vat_chat: "",
+    Mo_ta: "",
+    Quy_dinh: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<MongoRoom | null>(null);
 
   // Load data on component mount
   useEffect(() => {
@@ -124,126 +147,148 @@ const PCTSVDashboard = () => {
 
   const handleApproveBooking = async (booking: MongoBookingHistory) => {
     try {
-      console.log(`Approving booking ${booking._id}`);
-
-      // Update booking status in database
-      const success = await bookingService.updateBookingStatus(
-        booking._id!,
-        "confirmed",
-      );
-
+      const success = await bookingService.updateBookingStatus(booking._id || "", "confirmed");
       if (success) {
-        // Send confirmation email
-        await sendBookingConfirmation({
-          id: booking._id!,
-          roomName: `Phòng ${booking.Ma_phong}`,
-          bookerName: booking.Ten_nguoi_dung,
-          bookerEmail: booking.Email,
-          date: booking.Ngay,
-          time: booking.Ca,
-          purpose: booking.Ly_do,
-          attendees: 0, // We don't have this data in MongoDB structure
-        });
-
-        // Update local state
-        setBookings((prev) =>
-          prev.map((b) =>
-            b._id === booking._id
-              ? { ...b, trang_thai: "confirmed" as const }
-              : b,
-          ),
-        );
-
-        // Create success notification
-        const notification = document.createElement("div");
-        notification.className =
-          "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
-        notification.innerHTML = `
-          <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-            </svg>
-            <div>
-              <div class="font-medium">Đã duyệt phòng!</div>
-              <div class="text-sm">Email xác nhận đã được gửi</div>
-            </div>
-          </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Auto-remove after 3 seconds
-        setTimeout(() => {
-          document.body.removeChild(notification);
-        }, 3000);
-
-        console.log(`✅ Booking ${booking._id} approved successfully`);
+        setBookings(bookings.map(b => 
+          b._id === booking._id ? { ...b, trang_thai: "confirmed" } : b
+        ));
+        showSuccess("Thành công!", "Duyệt đặt phòng thành công! Boss đã approve! 👑");
+      } else {
+        showError("Lỗi!", "Không thể duyệt đặt phòng!");
       }
     } catch (error) {
       console.error("Error approving booking:", error);
-      alert("Có lỗi xảy ra khi duyệt đặt phòng");
+      showError("Lỗi!", "Có lỗi xảy ra khi duyệt đặt phòng! ❌");
     }
   };
 
   const handleRejectBooking = async (booking: MongoBookingHistory) => {
+    if (!confirm("🚫 Bạn có chắc chắn muốn từ chối đặt phòng này?")) {
+      return;
+    }
+
     try {
-      const reason = prompt("Lý do từ chối đặt phòng:");
-      if (!reason) return;
-
-      console.log(`Rejecting booking ${booking._id} with reason: ${reason}`);
-
-      // Update booking status in database
-      const success = await bookingService.updateBookingStatus(
-        booking._id!,
-        "cancelled",
-      );
-
+      const success = await bookingService.updateBookingStatus(booking._id || "", "cancelled");
       if (success) {
-        // Send rejection email
-        await sendBookingRejection({
-          id: booking._id!,
-          roomName: `Phòng ${booking.Ma_phong}`,
-          bookerName: booking.Ten_nguoi_dung,
-          bookerEmail: booking.Email,
-          reason,
-        });
-
-        // Update local state
-        setBookings((prev) =>
-          prev.map((b) =>
-            b._id === booking._id
-              ? { ...b, trang_thai: "cancelled" as const }
-              : b,
-          ),
-        );
-
-        // Create notification
-        const notification = document.createElement("div");
-        notification.className =
-          "fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
-        notification.innerHTML = `
-          <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-            </svg>
-            <div>
-              <div class="font-medium">Đã từ chối đặt phòng</div>
-              <div class="text-sm">Email thông báo đã được gửi</div>
-            </div>
-          </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-          document.body.removeChild(notification);
-        }, 3000);
-
-        console.log(`❌ Booking ${booking._id} rejected successfully`);
+        setBookings(bookings.map(b => 
+          b._id === booking._id ? { ...b, trang_thai: "cancelled" } : b
+        ));
+        showWarning("Đã từ chối!", "Từ chối đặt phòng thành công! Boss đã approve! 👑");
+      } else {
+        showError("Lỗi!", "Không thể từ chối đặt phòng!");
       }
     } catch (error) {
       console.error("Error rejecting booking:", error);
-      alert("Có lỗi xảy ra khi từ chối đặt phòng");
+      showError("Lỗi!", "Có lỗi xảy ra khi từ chối đặt phòng! ❌");
+    }
+  };
+
+  const handleAddRoom = async () => {
+    if (!newRoom.Ma_phong || !newRoom.So_phong || !newRoom.Suc_chua) {
+      showWarning("Thiếu thông tin!", "Vui lòng điền đầy đủ thông tin bắt buộc!");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const roomData = {
+        ...newRoom,
+        Ma_phong: newRoom.Ma_phong,
+        So_phong: newRoom.So_phong,
+        Suc_chua: newRoom.Suc_chua,
+      } as Omit<MongoRoom, "_id">;
+      
+      const createdRoom = await roomService.createRoom(roomData);
+      setRooms([...rooms, createdRoom]);
+      setNewRoom({
+        Ma_phong: "",
+        So_phong: 0,
+        Co_so: "CS2",
+        Suc_chua: 0,
+        "Dien_tich (m2)": 0,
+        trang_thai: "available",
+        Co_so_vat_chat: "",
+        Mo_ta: "",
+        Quy_dinh: "",
+      });
+      setShowAddRoomDialog(false);
+      showBoss("Thành công!", "Thêm phòng thành công! Boss đã approve! 👑");
+    } catch (error) {
+      console.error("Error adding room:", error);
+      showError("Lỗi!", "Có lỗi xảy ra khi thêm phòng! ❌");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateRoom = async (room: MongoRoom) => {
+    try {
+      const success = await roomService.updateRoom(room.Ma_phong, {
+        So_phong: room.So_phong,
+        Co_so: room.Co_so,
+        "Dien_tich (m2)": room["Dien_tich (m2)"],
+        Co_so_vat_chat: room.Co_so_vat_chat,
+        Suc_chua: room.Suc_chua,
+        Mo_ta: room.Mo_ta,
+        Quy_dinh: room.Quy_dinh,
+        trang_thai: room.trang_thai
+      });
+
+      if (success) {
+        setRooms(rooms.map(r => r._id === room._id ? room : r));
+        setShowRoomDialog(false);
+        alert("Cập nhật phòng thành công!");
+      }
+    } catch (error) {
+      console.error("Error updating room:", error);
+      alert("Có lỗi xảy ra khi cập nhật phòng");
+    }
+  };
+
+  const handleEditRoom = (room: MongoRoom) => {
+    setEditingRoom({ ...room });
+    setSelectedRoom(room);
+    setShowRoomDialog(true);
+  };
+
+  const handleSaveRoomEdit = async () => {
+    if (!selectedRoom) return;
+
+    setIsSubmitting(true);
+    try {
+      const success = await roomService.updateRoom(selectedRoom.Ma_phong, selectedRoom);
+      if (success) {
+        setRooms(rooms.map(r => r._id === selectedRoom._id ? selectedRoom : r));
+        setShowRoomDialog(false);
+        setSelectedRoom(null);
+        showBoss("Thành công!", "Cập nhật phòng thành công! Boss đã approve! 👑");
+      } else {
+        showError("Lỗi!", "Không thể cập nhật phòng!");
+      }
+    } catch (error) {
+      console.error("Error updating room:", error);
+      showError("Lỗi!", "Có lỗi xảy ra khi cập nhật phòng! ❌");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteRoom = async (roomId: string) => {
+    if (!confirm("🗑️ Bạn có chắc chắn muốn xóa phòng này?")) {
+      return;
+    }
+
+    try {
+      const success = await roomService.deleteRoom(roomId);
+      if (success) {
+        setRooms(rooms.filter(r => r._id !== roomId));
+        showBoss("Thành công!", "Xóa phòng thành công! Boss đã approve! 👑");
+      } else {
+        showError("Lỗi!", "Không tìm thấy phòng để xóa!");
+      }
+    } catch (error) {
+      console.error("Error deleting room:", error);
+      showError("Lỗi!", "Có lỗi xảy ra khi xóa phòng! ❌");
     }
   };
 
@@ -402,14 +447,14 @@ const PCTSVDashboard = () => {
                       Xem và quản lý thông tin phòng học trong hệ thống
                     </CardDescription>
                   </div>
-                  <Dialog>
+                  <Dialog open={showAddRoomDialog} onOpenChange={setShowAddRoomDialog}>
                     <DialogTrigger asChild>
-                      <Button>
+                      <Button onClick={() => setShowAddRoomDialog(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Thêm phòng
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Thêm phòng mới</DialogTitle>
                         <DialogDescription>
@@ -417,36 +462,71 @@ const PCTSVDashboard = () => {
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="room-number">Số phòng</Label>
+                            <Label htmlFor="room-id">Mã phòng *</Label>
                             <Input
-                              id="room-number"
-                              placeholder="202"
-                              type="number"
+                              id="room-id"
+                              placeholder="CS2_101"
+                              value={newRoom.Ma_phong}
+                              onChange={(e) => setNewRoom({...newRoom, Ma_phong: e.target.value})}
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="building">Tòa nhà</Label>
-                            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                              <option value="VPC1">Tòa VPC1</option>
-                              <option value="VPC2">Tòa VPC2</option>
-                              <option value="VPC3">Tòa VPC3</option>
-                            </select>
+                            <Label htmlFor="room-number">Số phòng *</Label>
+                            <Input
+                              id="room-number"
+                              placeholder="101"
+                              type="number"
+                              value={newRoom.So_phong || ""}
+                              onChange={(e) => setNewRoom({...newRoom, So_phong: parseInt(e.target.value) || 0})}
+                            />
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="area">Diện tích (m²)</Label>
-                            <Input id="area" type="number" placeholder="45" />
+                            <Label htmlFor="building">Tòa nhà</Label>
+                            <select 
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              value={newRoom.Co_so}
+                              onChange={(e) => setNewRoom({...newRoom, Co_so: e.target.value})}
+                            >
+                              <option value="CS2">Tòa CS2</option>
+                            </select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="capacity">Sức chứa</Label>
+                            <Label htmlFor="capacity">Sức chứa *</Label>
                             <Input
                               id="capacity"
                               type="number"
                               placeholder="50"
+                              value={newRoom.Suc_chua || ""}
+                              onChange={(e) => setNewRoom({...newRoom, Suc_chua: parseInt(e.target.value) || 0})}
                             />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="area">Diện tích (m²)</Label>
+                            <Input 
+                              id="area" 
+                              type="number" 
+                              placeholder="45"
+                              value={newRoom["Dien_tich (m2)"] || ""}
+                              onChange={(e) => setNewRoom({...newRoom, "Dien_tich (m2)": parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="status">Trạng thái</Label>
+                            <select 
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              value={newRoom.trang_thai}
+                              onChange={(e) => setNewRoom({...newRoom, trang_thai: e.target.value as any})}
+                            >
+                              <option value="available">Có sẵn</option>
+                              <option value="maintenance">Bảo trì</option>
+                              <option value="booked">Đã đặt</option>
+                            </select>
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -455,6 +535,8 @@ const PCTSVDashboard = () => {
                             id="equipment"
                             placeholder="Máy chiếu, Wifi, Điều hòa..."
                             rows={3}
+                            value={newRoom.Co_so_vat_chat}
+                            onChange={(e) => setNewRoom({...newRoom, Co_so_vat_chat: e.target.value})}
                           />
                         </div>
                         <div className="space-y-2">
@@ -463,9 +545,27 @@ const PCTSVDashboard = () => {
                             id="description"
                             placeholder="Mô tả chi tiết về phòng học..."
                             rows={2}
+                            value={newRoom.Mo_ta}
+                            onChange={(e) => setNewRoom({...newRoom, Mo_ta: e.target.value})}
                           />
                         </div>
-                        <Button className="w-full">Thêm phòng</Button>
+                        <div className="space-y-2">
+                          <Label htmlFor="rules">Quy định</Label>
+                          <Textarea
+                            id="rules"
+                            placeholder="Quy định sử dụng phòng..."
+                            rows={2}
+                            value={newRoom.Quy_dinh}
+                            onChange={(e) => setNewRoom({...newRoom, Quy_dinh: e.target.value})}
+                          />
+                        </div>
+                        <Button 
+                          className="w-full" 
+                          onClick={handleAddRoom}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? "Đang thêm..." : "Thêm phòng"}
+                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -527,7 +627,7 @@ const PCTSVDashboard = () => {
                                 ? "Có sẵn"
                                 : room.trang_thai === "maintenance"
                                   ? "Bảo trì"
-                                  : "��ã đặt"}
+                                  : "Đã đặt"}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -536,13 +636,16 @@ const PCTSVDashboard = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setSelectedRoom(room);
-                                  setShowRoomDialog(true);
+                                  handleEditRoom(room);
                                 }}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteRoom(room._id || "")}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -733,77 +836,121 @@ const PCTSVDashboard = () => {
 
       {/* Room Edit Dialog */}
       <Dialog open={showRoomDialog} onOpenChange={setShowRoomDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa phòng</DialogTitle>
             <DialogDescription>Cập nhật thông tin phòng học</DialogDescription>
           </DialogHeader>
-          {selectedRoom && (
+          {editingRoom && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-room-id">Mã phòng</Label>
+                  <Input
+                    id="edit-room-id"
+                    value={editingRoom.Ma_phong}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-room-number">Số phòng</Label>
                   <Input
                     id="edit-room-number"
-                    defaultValue={selectedRoom.So_phong}
+                    value={editingRoom.So_phong}
                     type="number"
+                    onChange={(e) => setEditingRoom({...editingRoom, So_phong: parseInt(e.target.value) || 0})}
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-building">Tòa nhà</Label>
                   <select
                     id="edit-building"
-                    defaultValue={selectedRoom.Co_so}
+                    value={editingRoom.Co_so}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    onChange={(e) => setEditingRoom({...editingRoom, Co_so: e.target.value})}
                   >
-                    <option value="VPC1">Tòa VPC1</option>
-                    <option value="VPC2">Tòa VPC2</option>
-                    <option value="VPC3">Tòa VPC3</option>
+                    <option value="CS2">Tòa CS2</option>
                   </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-area">Diện tích (m²)</Label>
-                  <Input
-                    id="edit-area"
-                    type="number"
-                    defaultValue={selectedRoom["Dien_tich (m2)"]}
-                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-capacity">Sức chứa</Label>
                   <Input
                     id="edit-capacity"
                     type="number"
-                    defaultValue={selectedRoom.Suc_chua}
+                    value={editingRoom.Suc_chua}
+                    onChange={(e) => setEditingRoom({...editingRoom, Suc_chua: parseInt(e.target.value) || 0})}
                   />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-area">Diện tích (m²)</Label>
+                  <Input
+                    id="edit-area"
+                    type="number"
+                    value={editingRoom["Dien_tich (m2)"]}
+                    onChange={(e) => setEditingRoom({...editingRoom, "Dien_tich (m2)": parseInt(e.target.value) || 0})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-status">Trạng thái</Label>
+                  <select
+                    id="edit-status"
+                    value={editingRoom.trang_thai}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    onChange={(e) => setEditingRoom({...editingRoom, trang_thai: e.target.value as any})}
+                  >
+                    <option value="available">Có sẵn</option>
+                    <option value="maintenance">Bảo trì</option>
+                    <option value="booked">Đã đặt</option>
+                  </select>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-equipment">Trang thiết bị</Label>
                 <Textarea
                   id="edit-equipment"
-                  defaultValue={parseEquipment(
-                    selectedRoom.Co_so_vat_chat,
-                  ).join(", ")}
+                  value={editingRoom.Co_so_vat_chat}
                   rows={3}
+                  onChange={(e) => setEditingRoom({...editingRoom, Co_so_vat_chat: e.target.value})}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-description">Mô tả</Label>
                 <Textarea
                   id="edit-description"
-                  defaultValue={selectedRoom.Mo_ta}
+                  value={editingRoom.Mo_ta}
                   rows={2}
+                  onChange={(e) => setEditingRoom({...editingRoom, Mo_ta: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-rules">Quy định</Label>
+                <Textarea
+                  id="edit-rules"
+                  value={editingRoom.Quy_dinh}
+                  rows={2}
+                  onChange={(e) => setEditingRoom({...editingRoom, Quy_dinh: e.target.value})}
                 />
               </div>
               <div className="flex space-x-2">
-                <Button className="flex-1">Lưu thay đổi</Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={handleSaveRoomEdit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+                </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => setShowRoomDialog(false)}
+                  onClick={() => {
+                    setShowRoomDialog(false);
+                    setEditingRoom(null);
+                  }}
                 >
                   Hủy
                 </Button>

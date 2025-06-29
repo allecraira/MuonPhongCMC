@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
+import { useNotification } from "@/contexts/NotificationContext";
 import {
   Card,
   CardContent,
@@ -52,6 +53,7 @@ const BookingForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { showBoss, showError, showWarning, showSuccess } = useNotification();
 
   // Get room data from location state
   const room = location.state?.room;
@@ -64,7 +66,7 @@ const BookingForm = () => {
     phone: "",
     studentId: user?.studentId || "",
     purpose: "",
-    attendees: 2,
+    attendees: 1,
     selectedTime: "",
     notes: "",
   });
@@ -142,7 +144,7 @@ const BookingForm = () => {
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedDate || !formData.selectedTime) {
-      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+      showWarning("Thiếu thông tin!", "Vui lòng điền đầy đủ thông tin bắt buộc");
       return;
     }
 
@@ -158,6 +160,8 @@ const BookingForm = () => {
         Ten_nguoi_dung: formData.bookerName,
         Ly_do: formData.purpose,
         Ca: formData.selectedTime,
+        Khung_gio: formData.selectedTime,
+        So_nguoi: formData.attendees,
         Ngay_dat: format(new Date(), "dd/MM/yyyy"),
       };
 
@@ -178,27 +182,7 @@ const BookingForm = () => {
 
       // Show approval notification
       if (newBooking.trang_thai === "confirmed") {
-        // Create success notification for auto-approval
-        const notification = document.createElement("div");
-        notification.className =
-          "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
-        notification.innerHTML = `
-          <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-            </svg>
-            <div>
-              <div class="font-medium">Đặt phòng được duyệt tự động!</div>
-              <div class="text-sm">Phòng trống - Email xác nhận đã gửi</div>
-            </div>
-          </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-          document.body.removeChild(notification);
-        }, 4000);
+        showSuccess("Thành công!", "Đặt phòng được duyệt tự động! Phòng trống - Email xác nhận đã gửi");
       }
 
       if (emailResult.approved || newBooking.trang_thai === "confirmed") {
@@ -225,11 +209,11 @@ const BookingForm = () => {
           },
         });
       } else {
-        alert(`Đặt phòng bị từ chối: ${emailResult.reason}`);
+        showError("Bị từ chối!", `Đặt phòng bị từ chối: ${emailResult.reason}`);
       }
     } catch (error) {
       console.error("Booking submission error:", error);
-      alert("Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.");
+      showError("Lỗi!", "Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại.");
     } finally {
       setIsSubmitting(false);
     }
@@ -402,7 +386,7 @@ const BookingForm = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="purpose">Mục đích sử dụng *</Label>
-                      <Input
+                      <Textarea
                         id="purpose"
                         value={formData.purpose}
                         onChange={(e) =>
@@ -414,46 +398,22 @@ const BookingForm = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="attendees">Số lượng người tham gia</Label>
-                      <div className="flex items-center space-x-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleInputChange(
-                              "attendees",
-                              Math.max(1, formData.attendees - 1),
-                            )
-                          }
-                          disabled={formData.attendees <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="text-lg font-medium w-12 text-center">
-                          {formData.attendees}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleInputChange(
-                              "attendees",
-                              Math.min(
-                                room.Suc_chua || room.capacity || 50,
-                                formData.attendees + 1,
-                              ),
-                            )
-                          }
-                          disabled={
-                            formData.attendees >=
-                            (room.Suc_chua || room.capacity || 50)
-                          }
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Label htmlFor="attendees">Số lượng người tham gia *</Label>
+                      <Input
+                        id="attendees"
+                        type="number"
+                        min="1"
+                        max={room.Suc_chua || room.capacity || 50}
+                        value={formData.attendees}
+                        onChange={(e) =>
+                          handleInputChange("attendees", parseInt(e.target.value) || 1)
+                        }
+                        required
+                        placeholder="Nhập số lượng người"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Tối đa: {room.Suc_chua || room.capacity || 50} người
+                      </p>
                     </div>
                   </div>
 

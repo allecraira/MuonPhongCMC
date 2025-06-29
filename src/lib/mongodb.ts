@@ -48,6 +48,55 @@ interface MongoUser {
   
   let isConnected = false;
   
+  // Load data from localStorage on initialization
+  const loadFromStorage = () => {
+    try {
+      const storedUsers = localStorage.getItem('cmc_users');
+      const storedRooms = localStorage.getItem('cmc_rooms');
+      const storedBookings = localStorage.getItem('cmc_bookings');
+      
+      if (storedUsers) {
+        usersCollection = JSON.parse(storedUsers);
+        console.log("📱 Loaded users from localStorage:", usersCollection.length);
+      }
+      
+      if (storedRooms) {
+        roomsCollection = JSON.parse(storedRooms);
+        console.log("📱 Loaded rooms from localStorage:", roomsCollection.length);
+      }
+      
+      if (storedBookings) {
+        bookingHistoryCollection = JSON.parse(storedBookings);
+        console.log("📱 Loaded bookings from localStorage:", bookingHistoryCollection.length);
+      }
+    } catch (error) {
+      console.error("❌ Error loading from localStorage:", error);
+    }
+  };
+
+  // Save data to localStorage
+  const saveToStorage = (type: 'users' | 'rooms' | 'bookings') => {
+    try {
+      switch (type) {
+        case 'users':
+          localStorage.setItem('cmc_users', JSON.stringify(usersCollection));
+          break;
+        case 'rooms':
+          localStorage.setItem('cmc_rooms', JSON.stringify(roomsCollection));
+          break;
+        case 'bookings':
+          localStorage.setItem('cmc_bookings', JSON.stringify(bookingHistoryCollection));
+          break;
+      }
+      console.log(`💾 Saved ${type} to localStorage`);
+    } catch (error) {
+      console.error(`❌ Error saving ${type} to localStorage:`, error);
+    }
+  };
+
+  // Initialize data from localStorage
+  loadFromStorage();
+  
   // Complete users collection with all real data
   let usersCollection: MongoUser[] = [
     // Students - Real data from database
@@ -275,8 +324,276 @@ interface MongoUser {
       Ma_nguoi_dung: "GV001",
       Ten_nguoi_dung: "TS. Trần Thị B",
       Ly_do: "Lớp học Lập trình Java",
-      Ca: "Tiết 7-9",
+      Ca: "1",
       Ngay_dat: "11/06/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_001",
+      Ma_phong: "VPC1_101",
+      Ngay: "2025-01-20",
+      Email: "BIT230372@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230372",
+      Ten_nguoi_dung: "Nguyễn Thị Tâm",
+      Ly_do: "Học nhóm môn Lập trình Web",
+      Ca: "2",
+      Ngay_dat: "2025-01-18",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_002",
+      Ma_phong: "VPC1_201",
+      Ngay: "2025-01-21",
+      Email: "BIT230372@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230372",
+      Ten_nguoi_dung: "Nguyễn Thị Tâm",
+      Ly_do: "Thuyết trình dự án cuối kỳ",
+      Ca: "3",
+      Ngay_dat: "2025-01-19",
+      trang_thai: "pending",
+    },
+    {
+      _id: "booking_003",
+      Ma_phong: "VPC2_102",
+      Ngay: "2025-01-22",
+      Email: "BIT230101@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230101",
+      Ten_nguoi_dung: "Trần Văn Nam",
+      Ly_do: "Thực hành môn Cơ sở dữ liệu",
+      Ca: "1",
+      Ngay_dat: "2025-01-20",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_004",
+      Ma_phong: "VPC3_301",
+      Ngay: "2025-01-23",
+      Email: "BIT230245@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230245",
+      Ten_nguoi_dung: "Lê Thị Hoa",
+      Ly_do: "Họp nhóm dự án",
+      Ca: "4",
+      Ngay_dat: "2025-01-21",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_005",
+      Ma_phong: "VPC1_102",
+      Ngay: "2025-01-24",
+      Email: "BIT230156@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230156",
+      Ten_nguoi_dung: "Phạm Minh Tuấn",
+      Ly_do: "Ôn tập thi cuối kỳ",
+      Ca: "5",
+      Ngay_dat: "2025-01-22",
+      trang_thai: "pending",
+    },
+    {
+      _id: "booking_006",
+      Ma_phong: "VPC2_201",
+      Ngay: "2025-01-20",
+      Email: "teacher1@st.cmc.edu.vn",
+      Ma_nguoi_dung: "GV001",
+      Ten_nguoi_dung: "TS. Trần Thị B",
+      Ly_do: "Lớp học Lập trình Java",
+      Ca: "2",
+      Ngay_dat: "2025-01-18",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_007",
+      Ma_phong: "VPC3_201",
+      Ngay: "2025-01-21",
+      Email: "nvminh@st.cmc.edu.vn",
+      Ma_nguoi_dung: "GV002",
+      Ten_nguoi_dung: "PGS.TS. Nguyễn Văn Minh",
+      Ly_do: "Lớp học Cơ sở dữ liệu",
+      Ca: "3",
+      Ngay_dat: "2025-01-19",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_008",
+      Ma_phong: "VPC1_301",
+      Ngay: "2025-01-22",
+      Email: "BIT230372@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230372",
+      Ten_nguoi_dung: "Nguyễn Thị Tâm",
+      Ly_do: "Thực hành môn Lập trình di động",
+      Ca: "1",
+      Ngay_dat: "2025-01-20",
+      trang_thai: "cancelled",
+    },
+    // Thêm booking cho tuần hiện tại để test
+    {
+      _id: "booking_current_001",
+      Ma_phong: "VPC1_101",
+      Ngay: "27/01/2025",
+      Email: "BIT230372@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230372",
+      Ten_nguoi_dung: "Nguyễn Thị Tâm",
+      Ly_do: "Học nhóm môn Lập trình Web",
+      Ca: "1",
+      Ngay_dat: "26/01/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_current_002",
+      Ma_phong: "VPC2_201",
+      Ngay: "28/01/2025",
+      Email: "teacher1@st.cmc.edu.vn",
+      Ma_nguoi_dung: "GV001",
+      Ten_nguoi_dung: "TS. Trần Thị B",
+      Ly_do: "Lớp học Lập trình Java",
+      Ca: "2",
+      Ngay_dat: "26/01/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_current_003",
+      Ma_phong: "VPC3_301",
+      Ngay: "29/01/2025",
+      Email: "BIT230101@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230101",
+      Ten_nguoi_dung: "Trần Văn Nam",
+      Ly_do: "Thực hành môn Cơ sở dữ liệu",
+      Ca: "1",
+      Ngay_dat: "27/01/2025",
+      trang_thai: "pending",
+    },
+    {
+      _id: "booking_current_004",
+      Ma_phong: "VPC1_201",
+      Ngay: "30/01/2025",
+      Email: "BIT230245@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230245",
+      Ten_nguoi_dung: "Lê Thị Hoa",
+      Ly_do: "Họp nhóm dự án",
+      Ca: "4",
+      Ngay_dat: "28/01/2025",
+      trang_thai: "confirmed",
+    },
+    // Thêm thêm booking để test giao diện
+    {
+      _id: "booking_current_005",
+      Ma_phong: "VPC2_102",
+      Ngay: "27/01/2025",
+      Email: "BIT230156@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230156",
+      Ten_nguoi_dung: "Phạm Minh Tuấn",
+      Ly_do: "Ôn tập thi cuối kỳ",
+      Ca: "5",
+      Ngay_dat: "25/01/2025",
+      trang_thai: "pending",
+    },
+    {
+      _id: "booking_current_006",
+      Ma_phong: "VPC3_201",
+      Ngay: "28/01/2025",
+      Email: "BIT230372@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230372",
+      Ten_nguoi_dung: "Nguyễn Thị Tâm",
+      Ly_do: "Thực hành môn Lập trình di động",
+      Ca: "1",
+      Ngay_dat: "26/01/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_current_007",
+      Ma_phong: "VPC1_301",
+      Ngay: "29/01/2025",
+      Email: "teacher1@st.cmc.edu.vn",
+      Ma_nguoi_dung: "GV001",
+      Ten_nguoi_dung: "TS. Trần Thị B",
+      Ly_do: "Lớp học Cơ sở dữ liệu",
+      Ca: "2",
+      Ngay_dat: "27/01/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_current_008",
+      Ma_phong: "VPC2_202",
+      Ngay: "30/01/2025",
+      Email: "BIT230101@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230101",
+      Ten_nguoi_dung: "Trần Văn Nam",
+      Ly_do: "Thuyết trình dự án",
+      Ca: "3",
+      Ngay_dat: "28/01/2025",
+      trang_thai: "pending",
+    },
+    // Thêm booking cho ngày hôm nay để test màu sắc
+    {
+      _id: "booking_today_001",
+      Ma_phong: "VPC1_101",
+      Ngay: "27/01/2025",
+      Email: "BIT230372@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230372",
+      Ten_nguoi_dung: "Nguyễn Thị Tâm",
+      Ly_do: "Học nhóm môn Lập trình Web",
+      Ca: "1",
+      Ngay_dat: "26/01/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_today_002",
+      Ma_phong: "VPC2_201",
+      Ngay: "27/01/2025",
+      Email: "teacher1@st.cmc.edu.vn",
+      Ma_nguoi_dung: "GV001",
+      Ten_nguoi_dung: "TS. Trần Thị B",
+      Ly_do: "Lớp học Lập trình Java",
+      Ca: "2",
+      Ngay_dat: "26/01/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_today_003",
+      Ma_phong: "VPC3_301",
+      Ngay: "27/01/2025",
+      Email: "BIT230101@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230101",
+      Ten_nguoi_dung: "Trần Văn Nam",
+      Ly_do: "Thực hành môn Cơ sở dữ liệu",
+      Ca: "3",
+      Ngay_dat: "26/01/2025",
+      trang_thai: "pending",
+    },
+    // Thêm booking cho tuần hiện tại
+    {
+      _id: "booking_week_001",
+      Ma_phong: "VPC1_102",
+      Ngay: "28/01/2025",
+      Email: "BIT230245@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230245",
+      Ten_nguoi_dung: "Lê Thị Hoa",
+      Ly_do: "Họp nhóm dự án",
+      Ca: "4",
+      Ngay_dat: "26/01/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_week_002",
+      Ma_phong: "VPC2_102",
+      Ngay: "29/01/2025",
+      Email: "BIT230156@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230156",
+      Ten_nguoi_dung: "Phạm Minh Tuấn",
+      Ly_do: "Ôn tập thi cuối kỳ",
+      Ca: "5",
+      Ngay_dat: "26/01/2025",
+      trang_thai: "confirmed",
+    },
+    {
+      _id: "booking_week_003",
+      Ma_phong: "VPC3_201",
+      Ngay: "30/01/2025",
+      Email: "BIT230372@st.cmc.edu.vn",
+      Ma_nguoi_dung: "BIT230372",
+      Ten_nguoi_dung: "Nguyễn Thị Tâm",
+      Ly_do: "Thực hành môn Lập trình di động",
+      Ca: "1",
+      Ngay_dat: "26/01/2025",
       trang_thai: "confirmed",
     },
   ];
@@ -329,57 +646,28 @@ interface MongoUser {
   };
   
   export const userService = {
-    async findByEmail(email: string): Promise<MongoUser | null> {
-      // Ensure users are initialized
-      if (usersCollection.length === 0) {
-        console.log("⚠️ Users collection is empty, reinitializing...");
-        initializeUsers();
-      }
-  
+    async getAllUsers(): Promise<MongoUser[]> {
       await new Promise((resolve) => setTimeout(resolve, 200));
-      console.log("🔍 UserService: Searching for user with email:", email);
-      console.log("🔍 UserService: Collection status:", {
-        length: usersCollection.length,
-        emails: usersCollection.map((u) => u.email),
-      });
-  
-      const foundUser = usersCollection.find((user) => {
-        const match = user.email === email;
-        console.log(
-          `🔍 UserService: Comparing "${user.email}" === "${email}" = ${match}`,
-        );
-        return match;
-      });
-  
-      if (foundUser) {
-        console.log("✅ UserService: User found:", foundUser.ten_nguoi_dung);
-        return foundUser;
-      } else {
-        console.log("❌ UserService: User not found for email:", email);
-        console.log(
-          "❌ UserService: Available emails:",
-          usersCollection.map((u) => u.email),
-        );
-        return null;
-      }
+      return usersCollection;
     },
-  
+
+    async findByEmail(email: string): Promise<MongoUser | null> {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return usersCollection.find((user) => user.email === email) || null;
+    },
+
     async updatePassword(email: string, newPassword: string): Promise<boolean> {
       await new Promise((resolve) => setTimeout(resolve, 300));
       const userIndex = usersCollection.findIndex((user) => user.email === email);
       if (userIndex !== -1) {
         usersCollection[userIndex].mat_khau = newPassword;
-        console.log("🔄 Password updated in database for:", email);
+        saveToStorage('users');
+        console.log("🔐 Password updated for:", email);
         return true;
       }
       return false;
     },
-  
-    async getAllUsers(): Promise<MongoUser[]> {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      return usersCollection;
-    },
-  
+
     async createUser(userData: Omit<MongoUser, "_id">): Promise<MongoUser> {
       await new Promise((resolve) => setTimeout(resolve, 300));
       const newUser: MongoUser = {
@@ -387,8 +675,21 @@ interface MongoUser {
         _id: `user_${Date.now()}`,
       };
       usersCollection.push(newUser);
+      saveToStorage('users');
       console.log("👤 New user created:", newUser.email);
       return newUser;
+    },
+
+    async deleteUser(userId: string): Promise<boolean> {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const userIndex = usersCollection.findIndex((user) => user._id === userId);
+      if (userIndex !== -1) {
+        usersCollection.splice(userIndex, 1);
+        saveToStorage('users');
+        console.log("🗑️ User deleted:", userId);
+        return true;
+      }
+      return false;
     },
   };
   
@@ -410,6 +711,7 @@ interface MongoUser {
         _id: `room_${Date.now()}`,
       };
       roomsCollection.push(newRoom);
+      saveToStorage('rooms');
       console.log("🏢 New room created:", newRoom.Ma_phong);
       return newRoom;
     },
@@ -427,6 +729,7 @@ interface MongoUser {
           ...roomsCollection[roomIndex],
           ...updateData,
         };
+        saveToStorage('rooms');
         console.log("🔄 Room updated:", maPhong);
         return true;
       }
@@ -440,6 +743,7 @@ interface MongoUser {
       );
       if (roomIndex !== -1) {
         roomsCollection.splice(roomIndex, 1);
+        saveToStorage('rooms');
         console.log("🗑️ Room deleted:", maPhong);
         return true;
       }
@@ -487,6 +791,7 @@ interface MongoUser {
       };
   
       bookingHistoryCollection.push(newBooking);
+      saveToStorage('bookings');
       console.log(
         "📅 New booking created:",
         newBooking._id,
@@ -507,6 +812,7 @@ interface MongoUser {
       );
       if (bookingIndex !== -1) {
         bookingHistoryCollection[bookingIndex].trang_thai = status;
+        saveToStorage('bookings');
         console.log("🔄 Booking status updated:", id, status);
         return true;
       }

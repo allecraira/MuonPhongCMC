@@ -40,13 +40,83 @@ import {
 } from "@/lib/mongodb";
 
 const SecurityCalendar = () => {
-  const [selectedDate] = useState(new Date());
+  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [selectedBooking, setSelectedBooking] =
     useState<MongoBookingHistory | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [bookings, setBookings] = useState<MongoBookingHistory[]>([]);
   const [rooms, setRooms] = useState<MongoRoom[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Tạo danh sách các ngày trong tuần
+  const getWeekDays = (date: Date) => {
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay() + 1); // Bắt đầu từ thứ 2
+
+    const days: { date: string; dayName: string; fullDate: string }[] = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      
+      days.push({
+        date: day.toISOString().split('T')[0],
+        dayName: day.toLocaleDateString('vi-VN', { weekday: 'long' }),
+        fullDate: day.toLocaleDateString('vi-VN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        })
+      });
+    }
+    return days;
+  };
+
+  // Tạo lịch tháng
+  const getMonthDays = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    // Ngày đầu tiên của tháng
+    const firstDay = new Date(year, month, 1);
+    // Ngày cuối cùng của tháng
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // Ngày đầu tiên của tuần chứa ngày đầu tháng
+    const startDate = new Date(firstDay);
+    startDate.setDate(firstDay.getDate() - firstDay.getDay() + 1);
+    
+    // Ngày cuối cùng của tuần chứa ngày cuối tháng
+    const endDate = new Date(lastDay);
+    endDate.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+    
+    const days: { date: string; dayName: string; fullDate: string; isCurrentMonth: boolean }[] = [];
+    
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      days.push({
+        date: d.toISOString().split('T')[0],
+        dayName: d.toLocaleDateString('vi-VN', { weekday: 'long' }),
+        fullDate: d.toLocaleDateString('vi-VN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        }),
+        isCurrentMonth: d.getMonth() === month
+      });
+    }
+    
+    return days;
+  };
+
+  // Kiểm tra xem có phải hôm nay không
+  const isToday = (dateString: string) => {
+    const today = new Date();
+    const date = new Date(dateString);
+    return date.toDateString() === today.toDateString();
+  };
 
   // Load booking and room data
   useEffect(() => {
@@ -67,6 +137,10 @@ const SecurityCalendar = () => {
           bookings: bookingsData.length,
           rooms: roomsData.length,
         });
+        
+        // Debug: Log một số booking mẫu
+        console.log("🔍 Sample bookings:", bookingsData.slice(0, 3));
+        console.log("🔍 Sample rooms:", roomsData.slice(0, 3));
       } catch (error) {
         console.error("❌ Error loading security data:", error);
       } finally {
@@ -77,20 +151,16 @@ const SecurityCalendar = () => {
     loadData();
   }, []);
 
-  // Create mock time slots for display
+  // Create time slots phù hợp với format booking
   const timeSlots = [
-    "07:00",
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
+    { id: "07:00-08:30", time: "07:00", period: "Tiết 1-2" },
+    { id: "08:40-10:10", time: "08:40", period: "Tiết 3-4" },
+    { id: "10:15-11:45", time: "10:15", period: "Tiết 5-6" },
+    { id: "13:00-14:30", time: "13:00", period: "Tiết 7-8" },
+    { id: "14:35-16:05", time: "14:35", period: "Tiết 9-10" },
+    { id: "16:10-17:40", time: "16:10", period: "Tiết 11-12" },
+    { id: "18:00-19:30", time: "18:00", period: "Tối 1" },
+    { id: "19:40-21:10", time: "19:40", period: "Tối 2" },
   ];
 
   // Get unique rooms for display
@@ -100,16 +170,81 @@ const SecurityCalendar = () => {
     building: room.Co_so,
   }));
 
-  const getBookingForSlot = (roomId: string, timeSlot: string) => {
-    // Convert timeSlot to a matching format and find bookings
+  const getBookingForSlot = (roomId: string, timeSlot: string, dayDate: string) => {
+    // Lọc booking theo phòng, thời gian và ngày
     return bookings.find((booking) => {
-      // Simple matching for demonstration
-      const roomMatches =
-        booking.Ma_phong.includes(roomId) ||
-        booking.Ma_phong.includes(`${roomId}`);
-      // For demo, show some bookings
-      return roomMatches && booking.trang_thai === "confirmed";
+      // Kiểm tra phòng
+      const roomMatches = booking.Ma_phong.includes(roomId) || booking.Ma_phong.includes(`${roomId}`);
+      
+      // Kiểm tra ngày
+      let bookingDate: Date;
+      if (booking.Ngay.includes('/')) {
+        const [day, month, year] = booking.Ngay.split('/');
+        bookingDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        bookingDate = new Date(booking.Ngay);
+      }
+      const targetDate = new Date(dayDate);
+      const dateMatches = bookingDate.toDateString() === targetDate.toDateString();
+      
+      // Kiểm tra thời gian (chuyển đổi ca sang giờ)
+      const caToHourMap: { [key: string]: string[] } = {
+        "1": ["12", "13"], // Ca 1 -> 12:00-14:00
+        "2": ["14", "15"], // Ca 2 -> 14:00-16:00  
+        "3": ["16", "17"], // Ca 3 -> 16:00-18:00
+        "4": ["18", "19"], // Ca 4 -> 18:00-20:00
+        "5": ["20", "21"], // Ca 5 -> 20:00-22:00
+      };
+      const hours = caToHourMap[booking.Ca] || [];
+      const timeMatches = hours.includes(timeSlot);
+      
+      return roomMatches && dateMatches && timeMatches && booking.trang_thai === "confirmed";
     });
+  };
+
+  const goToPreviousWeek = () => {
+    const newDate = new Date(currentWeek);
+    newDate.setDate(currentWeek.getDate() - 7);
+    setCurrentWeek(newDate);
+  };
+
+  const goToNextWeek = () => {
+    const newDate = new Date(currentWeek);
+    newDate.setDate(currentWeek.getDate() + 7);
+    setCurrentWeek(newDate);
+  };
+
+  const goToCurrentWeek = () => {
+    setCurrentWeek(new Date());
+  };
+
+  const goToPreviousMonth = () => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(currentMonth.getMonth() - 1);
+    setCurrentMonth(newDate);
+  };
+
+  const goToNextMonth = () => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(currentMonth.getMonth() + 1);
+    setCurrentMonth(newDate);
+  };
+
+  const goToCurrentMonth = () => {
+    setCurrentMonth(new Date());
+  };
+
+  const getWeekRange = () => {
+    const weekDays = getWeekDays(currentWeek);
+    if (weekDays.length === 0) return '';
+    const startDate = new Date(weekDays[0].date);
+    const endDate = new Date(weekDays[6].date);
+    
+    return `${startDate.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long' })} - ${endDate.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  };
+
+  const getMonthRange = () => {
+    return currentMonth.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
   };
 
   const handleBookingClick = (booking: MongoBookingHistory) => {
@@ -118,6 +253,22 @@ const SecurityCalendar = () => {
   };
 
   const formatDate = (date: Date) => {
+    return date.toLocaleDateString("vi-VN", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatShortDate = (date: Date) => {
+    return date.toLocaleDateString("vi-VN", {
+      day: "numeric",
+      month: "numeric"
+    });
+  };
+
+  const formatFullDate = (date: Date) => {
     return date.toLocaleDateString("vi-VN", {
       weekday: "long",
       year: "numeric",
@@ -222,6 +373,240 @@ const SecurityCalendar = () => {
     }
   };
 
+  // Weekly Calendar View Component
+  const WeeklyCalendarView = () => (
+    <div className="overflow-x-auto">
+      <div className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+        {/* Header Row */}
+        <div className="grid grid-cols-[120px_repeat(7,1fr)] bg-gray-50 border-b border-gray-200">
+          <div className="p-4 text-center font-bold text-gray-800 border-r border-gray-200">
+            <div className="text-sm">Khung giờ</div>
+            <div className="text-xs text-gray-600">Thời gian</div>
+          </div>
+          {getWeekDays(currentWeek).map((day, index) => (
+            <div
+              key={index}
+              className={`p-4 text-center font-bold text-gray-800 border-r border-gray-200 ${
+                isToday(day.date) ? 'bg-orange-50' : ''
+              }`}
+            >
+              <div className={`text-sm font-semibold ${
+                isToday(day.date) ? 'text-orange-800' : 'text-gray-800'
+              }`}>
+                {day.dayName.charAt(0).toUpperCase() + day.dayName.slice(1)}
+              </div>
+              <div className={`text-xs ${
+                isToday(day.date) ? 'text-orange-600' : 'text-gray-600'
+              }`}>
+                {day.date.split('-')[2]}/{day.date.split('-')[1]}
+              </div>
+              {isToday(day.date) && (
+                <div className="text-xs text-orange-700 font-bold mt-1">
+                  HÔM NAY
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Time Slots */}
+        {timeSlots.map((timeSlot) => (
+          <div
+            key={timeSlot.id}
+            className="grid grid-cols-[120px_repeat(7,1fr)] border-b border-gray-200 min-h-[100px]"
+          >
+            <div className="p-4 text-center font-medium text-gray-700 bg-gray-50 border-r border-gray-200 flex flex-col justify-center">
+              <div className="text-sm font-bold">{timeSlot.period}</div>
+              <div className="text-xs text-gray-500">
+                {timeSlot.time}
+              </div>
+            </div>
+            {getWeekDays(currentWeek).map((day, dayIndex) => {
+              // Lấy tất cả booking cho ngày và giờ này
+              const dayBookings = bookings.filter(booking => {
+                // Kiểm tra ngày
+                let bookingDate: Date;
+                if (booking.Ngay.includes('/')) {
+                  const [day, month, year] = booking.Ngay.split('/');
+                  bookingDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                } else {
+                  bookingDate = new Date(booking.Ngay);
+                }
+                const targetDate = new Date(day.date);
+                const dateMatches = bookingDate.toDateString() === targetDate.toDateString();
+                
+                // Kiểm tra thời gian (chuyển đổi ca sang khung giờ)
+                const formatTime = (ca: string) => {
+                  // Nếu ca đã là format thời gian, trả về nguyên
+                  if (ca.includes('-') || ca.includes(':')) {
+                    return ca;
+                  }
+                  
+                  // Mapping từ số ca sang khung giờ
+                  const timeSlots: { [key: string]: string } = {
+                    "1": "07:00-08:30",
+                    "2": "08:40-10:10", 
+                    "3": "10:15-11:45",
+                    "4": "13:00-14:30",
+                    "5": "14:35-16:05",
+                    "6": "16:10-17:40",
+                    "7": "18:00-19:30",
+                    "8": "19:40-21:10"
+                  };
+                  return timeSlots[ca] || ca;
+                };
+                
+                const bookingTime = formatTime(booking.Ca);
+                const timeMatches = bookingTime === timeSlot.id;
+                
+                console.log(`🔒 Security: Booking ${booking.Ma_phong} ca ${booking.Ca} -> time ${bookingTime}, slot ${timeSlot.id}, match: ${timeMatches}`);
+                
+                return dateMatches && timeMatches && booking.trang_thai === "confirmed";
+              });
+
+              return (
+                <div
+                  key={dayIndex}
+                  className={`p-3 border-r border-gray-200 ${
+                    isToday(day.date) ? 'bg-orange-25' : 'bg-white'
+                  }`}
+                >
+                  {dayBookings.length > 0 ? (
+                    <div className="space-y-2">
+                      {dayBookings.slice(0, 3).map((booking) => (
+                        <div
+                          key={booking._id}
+                          className="p-2 bg-blue-100 rounded border-l-3 border-blue-500 shadow-sm text-xs hover:bg-blue-200 transition-colors cursor-pointer"
+                          onClick={() => handleBookingClick(booking)}
+                        >
+                          <div className="font-bold text-blue-900 truncate">
+                            {booking.Ma_phong}
+                          </div>
+                          <div className="text-blue-700 truncate">
+                            {booking.Ten_nguoi_dung}
+                          </div>
+                          <div className="text-blue-600 truncate text-xs">
+                            {booking.Ly_do}
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-800 text-xs">
+                            {booking.trang_thai === "confirmed" ? "Đã duyệt" : "Chờ duyệt"}
+                          </Badge>
+                        </div>
+                      ))}
+                      {dayBookings.length > 3 && (
+                        <div className="text-center text-blue-600 text-xs">
+                          +{dayBookings.length - 3} phòng khác
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-300 text-xs py-6">
+                      -
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Monthly Calendar View Component
+  const MonthlyCalendarView = () => {
+    const monthDays = getMonthDays(currentMonth);
+    const weekDays = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+
+    return (
+      <div className="overflow-x-auto">
+        <div className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+          {/* Header Row */}
+          <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+            {weekDays.map((day, index) => (
+              <div key={index} className="p-4 text-center font-bold text-gray-800 border-r border-gray-200">
+                <div className="text-sm">{day}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7">
+            {monthDays.map((day, index) => {
+              // Lấy tất cả booking cho ngày này
+              const dayBookings = bookings.filter(booking => {
+                // Kiểm tra ngày
+                let bookingDate: Date;
+                if (booking.Ngay.includes('/')) {
+                  const [day, month, year] = booking.Ngay.split('/');
+                  bookingDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                } else {
+                  bookingDate = new Date(booking.Ngay);
+                }
+                const targetDate = new Date(day.date);
+                const dateMatches = bookingDate.toDateString() === targetDate.toDateString();
+                
+                return dateMatches && booking.trang_thai === "confirmed";
+              });
+
+              return (
+                <div
+                  key={index}
+                  className={`min-h-[120px] p-3 border-r border-b border-gray-200 ${
+                    !day.isCurrentMonth ? 'bg-gray-50' : 
+                    isToday(day.date) ? 'bg-orange-25' : 'bg-white'
+                  }`}
+                >
+                  {/* Date Header */}
+                  <div className={`text-sm font-semibold mb-2 ${
+                    !day.isCurrentMonth ? 'text-gray-400' :
+                    isToday(day.date) ? 'text-orange-800' : 'text-gray-800'
+                  }`}>
+                    {day.date.split('-')[2]}
+                    {isToday(day.date) && (
+                      <span className="ml-1 text-xs text-orange-600">●</span>
+                    )}
+                  </div>
+
+                  {/* Bookings */}
+                  <div className="space-y-1">
+                    {dayBookings.slice(0, 4).map((booking) => (
+                      <div
+                        key={booking._id}
+                        className="p-1 bg-blue-100 rounded border-l-2 border-blue-500 shadow-sm text-xs hover:bg-blue-200 transition-colors cursor-pointer"
+                        onClick={() => handleBookingClick(booking)}
+                      >
+                        <div className="font-bold text-blue-900 truncate">
+                          {booking.Ma_phong}
+                        </div>
+                        <div className="text-blue-700 truncate">
+                          {booking.Ten_nguoi_dung}
+                        </div>
+                        <div className="text-blue-600 truncate text-xs">
+                          {booking.Ca}
+                        </div>
+                      </div>
+                    ))}
+                    {dayBookings.length > 4 && (
+                      <div className="text-center text-blue-600 text-xs">
+                        +{dayBookings.length - 4} phòng khác
+                      </div>
+                    )}
+                    {dayBookings.length === 0 && day.isCurrentMonth && (
+                      <div className="text-center text-gray-300 text-xs py-4">
+                        -
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -287,21 +672,62 @@ const SecurityCalendar = () => {
             <h1 className="text-3xl font-bold text-gray-900">
               Lịch sử dụng phòng
             </h1>
-            <p className="text-gray-600 mt-2">{formatDate(selectedDate)}</p>
+            <p className="text-gray-600 mt-2">
+              {viewMode === "week" ? `Tuần ${getWeekRange()}` : `Tháng ${getMonthRange()}`}
+            </p>
           </div>
 
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              <ChevronLeft className="h-4 w-4" />
-              Ngày trước
-            </Button>
-            <Button variant="outline" size="sm">
-              Hôm nay
-            </Button>
-            <Button variant="outline" size="sm">
-              Ngày sau
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            {/* View Mode Toggle */}
+            <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+              <Button
+                variant={viewMode === "week" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("week")}
+                className={viewMode === "week" ? "bg-white shadow-sm" : ""}
+              >
+                Tuần
+              </Button>
+              <Button
+                variant={viewMode === "month" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("month")}
+                className={viewMode === "month" ? "bg-white shadow-sm" : ""}
+              >
+                Tháng
+              </Button>
+            </div>
+
+            {/* Navigation Buttons */}
+            {viewMode === "week" ? (
+              <>
+                <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Tuần trước
+                </Button>
+                <Button variant="outline" size="sm" onClick={goToCurrentWeek}>
+                  Hôm nay
+                </Button>
+                <Button variant="outline" size="sm" onClick={goToNextWeek}>
+                  Tuần sau
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Tháng trước
+                </Button>
+                <Button variant="outline" size="sm" onClick={goToCurrentMonth}>
+                  Hôm nay
+                </Button>
+                <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                  Tháng sau
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -310,91 +736,21 @@ const SecurityCalendar = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Calendar className="h-5 w-5 mr-2" />
-              Lịch đặt phòng theo giờ
+              {viewMode === "week" 
+                ? `Lịch đặt phòng theo giờ - Tuần ${getWeekRange()}`
+                : `Lịch đặt phòng theo tháng - ${getMonthRange()}`
+              }
             </CardTitle>
             <CardDescription>
               Click vào ô đặt phòng để xem chi tiết thông tin
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <div className="min-w-full">
-                {/* Header Row */}
-                <div className="grid grid-cols-[100px_repeat(6,1fr)] gap-1 mb-2">
-                  <div className="p-3 text-center font-medium text-gray-700">
-                    Giờ
-                  </div>
-                  {displayRooms.map((room) => (
-                    <div
-                      key={room.id}
-                      className="p-3 text-center font-medium text-gray-700 bg-gray-100 rounded"
-                    >
-                      <div className="text-sm font-semibold">{room.name}</div>
-                      <div className="text-xs text-gray-500">
-                        Tòa {room.building}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Time Slots */}
-                {timeSlots.map((timeSlot) => (
-                  <div
-                    key={timeSlot}
-                    className="grid grid-cols-[100px_repeat(6,1fr)] gap-1 mb-1"
-                  >
-                    <div className="p-3 text-center font-medium text-gray-600 bg-gray-50 rounded flex items-center justify-center">
-                      {timeSlot}
-                    </div>
-                    {displayRooms.map((room) => {
-                      const booking = getBookingForSlot(room.id, timeSlot);
-                      return (
-                        <div
-                          key={`${room.id}-${timeSlot}`}
-                          className={`p-2 min-h-[80px] rounded border ${
-                            booking
-                              ? "bg-blue-50 border-blue-200 cursor-pointer hover:bg-blue-100"
-                              : "bg-white border-gray-200"
-                          } transition-colors`}
-                          onClick={() => booking && handleBookingClick(booking)}
-                        >
-                          {booking ? (
-                            <div className="text-xs">
-                              <div className="font-semibold text-blue-900 mb-1">
-                                {booking.Ten_nguoi_dung}
-                              </div>
-                              <div className="text-blue-700 mb-1">
-                                {booking.Ly_do}
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                  {booking.Ma_phong}
-                                </Badge>
-                                <Badge
-                                  className={
-                                    booking.trang_thai === "confirmed"
-                                      ? "bg-green-100 text-green-800 text-xs"
-                                      : "bg-yellow-100 text-yellow-800 text-xs"
-                                  }
-                                >
-                                  {booking.trang_thai === "confirmed"
-                                    ? "Đã duyệt"
-                                    : "Chờ duyệt"}
-                                </Badge>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-center text-gray-400 text-xs py-4">
-                              Trống
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
+            {viewMode === "week" ? (
+              <WeeklyCalendarView />
+            ) : (
+              <MonthlyCalendarView />
+            )}
           </CardContent>
         </Card>
 
@@ -408,9 +764,36 @@ const SecurityCalendar = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {bookings.length}
+                {viewMode === "week" 
+                  ? bookings.filter(b => {
+                      const weekDays = getWeekDays(currentWeek);
+                      const weekDates = weekDays.map(d => d.date);
+                      let bookingDate: Date;
+                      if (b.Ngay.includes('/')) {
+                        const [day, month, year] = b.Ngay.split('/');
+                        bookingDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                      } else {
+                        bookingDate = new Date(b.Ngay);
+                      }
+                      return weekDates.includes(bookingDate.toISOString().split('T')[0]);
+                    }).length
+                  : bookings.filter(b => {
+                      const monthDays = getMonthDays(currentMonth);
+                      const monthDates = monthDays.filter(d => d.isCurrentMonth).map(d => d.date);
+                      let bookingDate: Date;
+                      if (b.Ngay.includes('/')) {
+                        const [day, month, year] = b.Ngay.split('/');
+                        bookingDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                      } else {
+                        bookingDate = new Date(b.Ngay);
+                      }
+                      return monthDates.includes(bookingDate.toISOString().split('T')[0]);
+                    }).length
+                }
               </div>
-              <p className="text-xs text-gray-500 mt-1">Hôm nay</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {viewMode === "week" ? "Tuần này" : "Tháng này"}
+              </p>
             </CardContent>
           </Card>
 

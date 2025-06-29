@@ -1,6 +1,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import BossNotification from "@/components/ui/boss-notification";
+import { NotificationProvider, useNotification } from "@/contexts/NotificationContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
@@ -17,9 +19,25 @@ import BookingConfirmation from "./pages/BookingConfirmation";
 import AdminDashboard from "./pages/AdminDashboard";
 import PCTSVDashboard from "./pages/PCTSVDashboard";
 import SecurityCalendar from "./pages/SecurityCalendar";
+import WeeklyCalendarPage from "./pages/WeeklyCalendarPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Global Notification Component
+const GlobalNotification = () => {
+  const { notification, hideNotification } = useNotification();
+  
+  return (
+    <BossNotification
+      type={notification.type}
+      title={notification.title}
+      message={notification.message}
+      visible={notification.visible}
+      onClose={hideNotification}
+    />
+  );
+};
 
 // Protected Route Component
 const ProtectedRoute = ({
@@ -64,7 +82,7 @@ const DashboardRouter = () => {
   }
 };
 
-const App = () => (
+const AppContent = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -134,13 +152,28 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/weekly-calendar"
+              element={
+                <ProtectedRoute>
+                  <WeeklyCalendarPage />
+                </ProtectedRoute>
+              }
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
+      <GlobalNotification />
     </TooltipProvider>
   </QueryClientProvider>
+);
+
+const App = () => (
+  <NotificationProvider>
+    <AppContent />
+  </NotificationProvider>
 );
 
 export default App;

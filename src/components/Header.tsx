@@ -59,6 +59,18 @@ const Header = ({ variant = "default" }: HeaderProps) => {
               >
                 Danh sách phòng
               </Link>
+              {user && (
+                <Link
+                  to="/weekly-calendar"
+                  className={`transition-colors ${
+                    isActive("/weekly-calendar")
+                      ? "text-cmc-600 font-medium"
+                      : "text-gray-600 hover:text-cmc-600"
+                  }`}
+                >
+                  Lịch tổng
+                </Link>
+              )}
               <Link
                 to="/about"
                 className={`transition-colors ${

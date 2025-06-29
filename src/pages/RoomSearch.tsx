@@ -235,9 +235,7 @@ const RoomSearch = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="VPC2">Tòa VPC2</SelectItem>
-                    <SelectItem value="VPC1">Tòa VPC1</SelectItem>
-                    <SelectItem value="VPC3">Tòa VPC3</SelectItem>
+                    <SelectItem value="CS2">Tòa CS2</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
