@@ -170,11 +170,26 @@ const WeeklyCalendar = () => {
 
   const formatTime = (ca: string) => {
     // Nếu ca đã là format thời gian, trả về nguyên
-    if (ca.includes('-') || ca.includes(':')) {
-      return ca;
+    if (ca.includes('-') && ca.match(/\d{2}:\d{2}/)) {
+      return [ca];
     }
-    
-    // Mapping từ số ca sang khung giờ
+    // Mapping tiết sang mảng slot, không lặp key
+    const tietToSlots: { [key: string]: string[] } = {
+      'Tiết 1-2': ['07:00-08:30'],
+      'Tiết 3-4': ['08:40-10:10'],
+      'Tiết 5-6': ['10:15-11:45'],
+      'Tiết 7-8': ['13:00-14:30'],
+      'Tiết 9-10': ['14:35-16:05'],
+      'Tiết 11-12': ['16:10-17:40'],
+      'Tiết 13': ['18:00-18:45'],
+      'Tiết 14': ['18:45-19:30'],
+      'Tiết 7-9': ['13:00-14:30','14:35-16:05','16:10-17:40'],
+      'Tiết 10-12': ['15:00-17:40','16:10-17:40'],
+      'Tiết 3-6': ['08:40-10:10','10:15-11:45','13:00-14:30','14:35-16:05'],
+      'Tiết 13-14': ['18:00-19:30'],
+    };
+    if (tietToSlots[ca]) return tietToSlots[ca];
+    // Nếu là số ca
     const timeSlots: { [key: string]: string } = {
       "1": "07:00-08:30",
       "2": "08:40-10:10", 
@@ -185,7 +200,7 @@ const WeeklyCalendar = () => {
       "7": "18:00-19:30",
       "8": "19:40-21:10"
     };
-    return timeSlots[ca] || ca;
+    return [timeSlots[ca] || ca];
   };
 
   const getStatusColor = (status: string) => {
@@ -335,11 +350,8 @@ const WeeklyCalendar = () => {
               {/* Day cells */}
               {weekSchedule.map((day, dayIndex) => {
                 const slotBookings = day.bookings.filter(booking => {
-                  // Chuyển đổi ca booking sang khung giờ tương ứng
-                  const bookingTime = formatTime(booking.Ca);
-                  console.log(`📅 Booking ${booking.Ma_phong} ca ${booking.Ca} -> time ${bookingTime}, slot ${slot.time}, match: ${bookingTime === slot.time}`);
-                  
-                  return bookingTime === slot.time;
+                  const bookingTimes = formatTime(booking.Ca);
+                  return bookingTimes.includes(slot.time);
                 });
                 
                 console.log(`📅 Day ${day.date} slot ${slot.time}: ${slotBookings.length} bookings`);

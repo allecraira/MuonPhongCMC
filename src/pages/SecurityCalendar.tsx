@@ -188,15 +188,40 @@ const SecurityCalendar = () => {
       const dateMatches = bookingDate.toDateString() === targetDate.toDateString();
       
       // Kiểm tra thời gian (chuyển đổi ca sang giờ)
-      const caToHourMap: { [key: string]: string[] } = {
-        "1": ["12", "13"], // Ca 1 -> 12:00-14:00
-        "2": ["14", "15"], // Ca 2 -> 14:00-16:00  
-        "3": ["16", "17"], // Ca 3 -> 16:00-18:00
-        "4": ["18", "19"], // Ca 4 -> 18:00-20:00
-        "5": ["20", "21"], // Ca 5 -> 20:00-22:00
+      const formatTime = (ca: string) => {
+        if (ca.includes('-') && ca.match(/\d{2}:\d{2}/)) {
+          return [ca];
+        }
+        const tietToSlots: { [key: string]: string[] } = {
+          'Tiết 1-2': ['07:00-08:30'],
+          'Tiết 3-4': ['08:40-10:10'],
+          'Tiết 5-6': ['10:15-11:45'],
+          'Tiết 7-8': ['13:00-14:30'],
+          'Tiết 9-10': ['14:35-16:05'],
+          'Tiết 11-12': ['16:10-17:40'],
+          'Tiết 13': ['18:00-18:45'],
+          'Tiết 14': ['18:45-19:30'],
+          'Tiết 7-9': ['13:00-14:30','14:35-16:05','16:10-17:40'],
+          'Tiết 10-12': ['15:00-17:40','16:10-17:40'],
+          'Tiết 3-6': ['08:40-10:10','10:15-11:45','13:00-14:30','14:35-16:05'],
+          'Tiết 13-14': ['18:00-19:30'],
+        };
+        if (tietToSlots[ca]) return tietToSlots[ca];
+        const timeSlots: { [key: string]: string } = {
+          "1": "07:00-08:30",
+          "2": "08:40-10:10", 
+          "3": "10:15-11:45",
+          "4": "13:00-14:30",
+          "5": "14:35-16:05",
+          "6": "16:10-17:40",
+          "7": "18:00-19:30",
+          "8": "19:40-21:10"
+        };
+        return [timeSlots[ca] || ca];
       };
-      const hours = caToHourMap[booking.Ca] || [];
-      const timeMatches = hours.includes(timeSlot);
+      
+      const bookingTimes = formatTime(booking.Ca);
+      const timeMatches = bookingTimes.includes(timeSlot);
       
       return roomMatches && dateMatches && timeMatches && booking.trang_thai === "confirmed";
     });
@@ -437,12 +462,24 @@ const SecurityCalendar = () => {
                 
                 // Kiểm tra thời gian (chuyển đổi ca sang khung giờ)
                 const formatTime = (ca: string) => {
-                  // Nếu ca đã là format thời gian, trả về nguyên
-                  if (ca.includes('-') || ca.includes(':')) {
-                    return ca;
+                  if (ca.includes('-') && ca.match(/\d{2}:\d{2}/)) {
+                    return [ca];
                   }
-                  
-                  // Mapping từ số ca sang khung giờ
+                  const tietToSlots: { [key: string]: string[] } = {
+                    'Tiết 1-2': ['07:00-08:30'],
+                    'Tiết 3-4': ['08:40-10:10'],
+                    'Tiết 5-6': ['10:15-11:45'],
+                    'Tiết 7-8': ['13:00-14:30'],
+                    'Tiết 9-10': ['14:35-16:05'],
+                    'Tiết 11-12': ['16:10-17:40'],
+                    'Tiết 13': ['18:00-18:45'],
+                    'Tiết 14': ['18:45-19:30'],
+                    'Tiết 7-9': ['13:00-14:30','14:35-16:05','16:10-17:40'],
+                    'Tiết 10-12': ['15:00-17:40','16:10-17:40'],
+                    'Tiết 3-6': ['08:40-10:10','10:15-11:45','13:00-14:30','14:35-16:05'],
+                    'Tiết 13-14': ['18:00-19:30'],
+                  };
+                  if (tietToSlots[ca]) return tietToSlots[ca];
                   const timeSlots: { [key: string]: string } = {
                     "1": "07:00-08:30",
                     "2": "08:40-10:10", 
@@ -453,13 +490,13 @@ const SecurityCalendar = () => {
                     "7": "18:00-19:30",
                     "8": "19:40-21:10"
                   };
-                  return timeSlots[ca] || ca;
+                  return [timeSlots[ca] || ca];
                 };
                 
-                const bookingTime = formatTime(booking.Ca);
-                const timeMatches = bookingTime === timeSlot.id;
+                const bookingTimes = formatTime(booking.Ca);
+                const timeMatches = bookingTimes.includes(timeSlot.id);
                 
-                console.log(`🔒 Security: Booking ${booking.Ma_phong} ca ${booking.Ca} -> time ${bookingTime}, slot ${timeSlot.id}, match: ${timeMatches}`);
+                console.log(`🔒 Security: Booking ${booking.Ma_phong} ca ${booking.Ca} -> time ${bookingTimes}, slot ${timeSlot.id}, match: ${timeMatches}`);
                 
                 return dateMatches && timeMatches && booking.trang_thai === "confirmed";
               });

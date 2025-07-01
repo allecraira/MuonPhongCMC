@@ -35,6 +35,8 @@ interface MongoUser {
     Ten_nguoi_dung: string;
     Ly_do: string;
     Ca: string;
+    Khung_gio: string;
+    So_nguoi: number;
     Ngay_dat: string;
     trang_thai?: "pending" | "confirmed" | "cancelled";
   }
@@ -48,54 +50,8 @@ interface MongoUser {
   
   let isConnected = false;
   
-  // Load data from localStorage on initialization
-  const loadFromStorage = () => {
-    try {
-      const storedUsers = localStorage.getItem('cmc_users');
-      const storedRooms = localStorage.getItem('cmc_rooms');
-      const storedBookings = localStorage.getItem('cmc_bookings');
-      
-      if (storedUsers) {
-        usersCollection = JSON.parse(storedUsers);
-        console.log("📱 Loaded users from localStorage:", usersCollection.length);
-      }
-      
-      if (storedRooms) {
-        roomsCollection = JSON.parse(storedRooms);
-        console.log("📱 Loaded rooms from localStorage:", roomsCollection.length);
-      }
-      
-      if (storedBookings) {
-        bookingHistoryCollection = JSON.parse(storedBookings);
-        console.log("📱 Loaded bookings from localStorage:", bookingHistoryCollection.length);
-      }
-    } catch (error) {
-      console.error("❌ Error loading from localStorage:", error);
-    }
-  };
-
-  // Save data to localStorage
-  const saveToStorage = (type: 'users' | 'rooms' | 'bookings') => {
-    try {
-      switch (type) {
-        case 'users':
-          localStorage.setItem('cmc_users', JSON.stringify(usersCollection));
-          break;
-        case 'rooms':
-          localStorage.setItem('cmc_rooms', JSON.stringify(roomsCollection));
-          break;
-        case 'bookings':
-          localStorage.setItem('cmc_bookings', JSON.stringify(bookingHistoryCollection));
-          break;
-      }
-      console.log(`💾 Saved ${type} to localStorage`);
-    } catch (error) {
-      console.error(`❌ Error saving ${type} to localStorage:`, error);
-    }
-  };
-
   // Initialize data from localStorage
-  loadFromStorage();
+  // loadFromStorage();
   
   // Complete users collection with all real data
   let usersCollection: MongoUser[] = [
@@ -203,432 +159,167 @@ interface MongoUser {
       mat_khau: "123456",
       vai_tro: "security",
     },
+    { ma_nguoi_dung: 'BIT230372', ten_nguoi_dung: 'Nguyễn Thị Tâm', ngay_sinh: '26/03/2005', gioi_tinh: 'Nữ', email: 'BIT230372@st.cmcu.edu.vn', so_dien_thoai: 365666321, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT230373', ten_nguoi_dung: 'Trần Văn Minh', ngay_sinh: '12/08/2004', gioi_tinh: 'Nam', email: 'BIT230373@st.cmcu.edu.vn', so_dien_thoai: 378123456, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT230374', ten_nguoi_dung: 'Lê Thị Hương', ngay_sinh: '05/11/2005', gioi_tinh: 'Nữ', email: 'BIT230374@st.cmcu.edu.vn', so_dien_thoai: 387654321, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT230375', ten_nguoi_dung: 'Phạm Anh Tuấn', ngay_sinh: '20/07/2004', gioi_tinh: 'Nam', email: 'BIT230375@st.cmcu.edu.vn', so_dien_thoai: 399988776, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT230376', ten_nguoi_dung: 'Vũ Mai Lan', ngay_sinh: '18/01/2006', gioi_tinh: 'Nữ', email: 'BIT230376@st.cmcu.edu.vn', so_dien_thoai: 354433221, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT230377', ten_nguoi_dung: 'Nguyễn Quốc Bảo', ngay_sinh: '03/09/2005', gioi_tinh: 'Nam', email: 'BIT230377@st.cmcu.edu.vn', so_dien_thoai: 367890123, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT230378', ten_nguoi_dung: 'Đặng Thị Yến Nhi', ngay_sinh: '23/12/2005', gioi_tinh: 'Nữ', email: 'BIT230378@st.cmcu.edu.vn', so_dien_thoai: 376543210, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'nvhung', ten_nguoi_dung: 'Nguyễn Văn Hùng', ngay_sinh: '15/02/1980', gioi_tinh: 'Nam', email: 'nvhung@cmcu.edu.vn', so_dien_thoai: 901234567, mat_khau: '123456', vai_tro: 'teacher' },
+    { ma_nguoi_dung: 'ttlan', ten_nguoi_dung: 'Trần Thị Lan', ngay_sinh: '22/07/1982', gioi_tinh: 'Nữ', email: 'ttlan@cmcu.edu.vn', so_dien_thoai: 912345678, mat_khau: '123456', vai_tro: 'teacher' },
+    { ma_nguoi_dung: 'BCS001', ten_nguoi_dung: 'Lê Hoàng Long', ngay_sinh: '03/05/2004', gioi_tinh: 'Nam', email: 'BCS001@st.cmcu.edu.vn', so_dien_thoai: 938765432, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BCS002', ten_nguoi_dung: 'Đặng Thị Hòa', ngay_sinh: '09/09/2005', gioi_tinh: 'Nữ', email: 'BCS002@st.cmcu.edu.vn', so_dien_thoai: 945678901, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BBA001', ten_nguoi_dung: 'Mai Văn Khánh', ngay_sinh: '12/12/2003', gioi_tinh: 'Nam', email: 'BBA001@st.cmcu.edu.vn', so_dien_thoai: 956789012, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BBA002', ten_nguoi_dung: 'Phạm Thị Quỳnh Anh', ngay_sinh: '27/03/2004', gioi_tinh: 'Nữ', email: 'BBA002@st.cmcu.edu.vn', so_dien_thoai: 967890123, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240209', ten_nguoi_dung: 'Võ Thùy Linh', ngay_sinh: '12/5/2006', gioi_tinh: 'Nữ', email: 'BIT240209@st.cmcu.edu.vn', so_dien_thoai: 988453786, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240201', ten_nguoi_dung: 'Hoàng Dương Nhật Minh', ngay_sinh: '26/01/2006', gioi_tinh: 'Nam', email: 'BMK240201@st.cmcu.edu.vn', so_dien_thoai: 988453787, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240202', ten_nguoi_dung: 'Nguyễn Tuấn', ngay_sinh: '12/11/2006', gioi_tinh: 'Nam', email: 'BMK240202@st.cmcu.edu.vn', so_dien_thoai: 988453788, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240203', ten_nguoi_dung: 'Nguyễn Minh Hiếu', ngay_sinh: '09/10/2006', gioi_tinh: 'Nam', email: 'BIT240203@st.cmcu.edu.vn', so_dien_thoai: 988453789, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240204', ten_nguoi_dung: 'Bùi Tiến Nguyên', ngay_sinh: '13/11/2006', gioi_tinh: 'Nam', email: 'BIT240204@st.cmcu.edu.vn', so_dien_thoai: 988453790, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240205', ten_nguoi_dung: 'Lê Duy Thuận', ngay_sinh: '05/03/2006', gioi_tinh: 'Nam', email: 'BMK240205@st.cmcu.edu.vn', so_dien_thoai: 988453791, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240206', ten_nguoi_dung: 'Nguyễn Quang Huy', ngay_sinh: '05/02/2005', gioi_tinh: 'Nam', email: 'BMK240206@st.cmcu.edu.vn', so_dien_thoai: 988453792, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240207', ten_nguoi_dung: 'Nguyễn Thị Xinh', ngay_sinh: '18/08/2005', gioi_tinh: 'Nữ', email: 'BMK240207@st.cmcu.edu.vn', so_dien_thoai: 988453793, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240208', ten_nguoi_dung: 'Lường Thế Phúc', ngay_sinh: '09/08/2006', gioi_tinh: 'Nam', email: 'BIT240208@st.cmcu.edu.vn', so_dien_thoai: 988453794, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240209', ten_nguoi_dung: 'Đào Quang Minh', ngay_sinh: '09/01/2006', gioi_tinh: 'Nam', email: 'BMK240210@st.cmcu.edu.vn', so_dien_thoai: 988453795, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240210', ten_nguoi_dung: 'Nguyễn Duy Mạnh Khoa', ngay_sinh: '10/11/2005', gioi_tinh: 'Nam', email: 'BIT240210@st.cmcu.edu.vn', so_dien_thoai: 988453796, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240212', ten_nguoi_dung: 'Kim Quốc Khánh', ngay_sinh: '22/10/2006', gioi_tinh: 'Nam', email: 'BMK240212@st.cmcu.edu.vn', so_dien_thoai: 988453797, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240212', ten_nguoi_dung: 'Lữ Trọng Vỹ', ngay_sinh: '03/08/2006', gioi_tinh: 'Nam', email: 'BMK240212@st.cmcu.edu.vn', so_dien_thoai: 988453798, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BMK240213', ten_nguoi_dung: 'Phạm Khánh Linh', ngay_sinh: '17/5/2005', gioi_tinh: 'Nữ', email: 'BMK240213@st.cmcu.edu.vn', so_dien_thoai: 988453799, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240214', ten_nguoi_dung: 'Từ Xuân Đạt', ngay_sinh: '13/03/2006', gioi_tinh: 'Nam', email: 'BIT240214@st.cmcu.edu.vn', so_dien_thoai: 988453800, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240215', ten_nguoi_dung: 'Nguyễn Đình Khuyến', ngay_sinh: '24/03/2006', gioi_tinh: 'Nam', email: 'BIT240215@st.cmcu.edu.vn', so_dien_thoai: 988453801, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240216', ten_nguoi_dung: 'Nguyễn Văn Thiện', ngay_sinh: '30/03/2006', gioi_tinh: 'Nam', email: 'BIT240216@st.cmcu.edu.vn', so_dien_thoai: 988453802, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240217', ten_nguoi_dung: 'Lê Thành Đô', ngay_sinh: '09/12/0204', gioi_tinh: 'Nam', email: 'BIT240217@st.cmcu.edu.vn', so_dien_thoai: 988453803, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240218', ten_nguoi_dung: 'Lê Tuấn Anh', ngay_sinh: '17/07/2006', gioi_tinh: 'Nam', email: 'BIT240218@st.cmcu.edu.vn', so_dien_thoai: 988453804, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240219', ten_nguoi_dung: 'Nguyễn Thế Tấn', ngay_sinh: '12/06/2004', gioi_tinh: 'Nam', email: 'BIT240219@st.cmcu.edu.vn', so_dien_thoai: 988453805, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240220', ten_nguoi_dung: 'Phạm Minh Đức', ngay_sinh: '24/12/2006', gioi_tinh: 'Nam', email: 'BIT240220@st.cmcu.edu.vn', so_dien_thoai: 988453806, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240221', ten_nguoi_dung: 'Nguyễn Duy Mạnh Khoa', ngay_sinh: '10/11/2005', gioi_tinh: 'Nam', email: 'BIT240221@st.cmcu.edu.vn', so_dien_thoai: 988453807, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240222', ten_nguoi_dung: 'Nguyễn Đức Khánh', ngay_sinh: '27/02/2006', gioi_tinh: 'Nam', email: 'BIT240222@st.cmcu.edu.vn', so_dien_thoai: 988453808, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240223', ten_nguoi_dung: 'Nguyễn Văn Đạt', ngay_sinh: '19/10/2004', gioi_tinh: 'Nam', email: 'BIT240223@st.cmcu.edu.vn', so_dien_thoai: 988453809, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BIT240224', ten_nguoi_dung: 'Lê Danh Minh', ngay_sinh: '15/05/2005', gioi_tinh: 'Nam', email: 'BIT240224@st.cmcu.edu.vn', so_dien_thoai: 988453810, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BJL230552', ten_nguoi_dung: 'Nguyễn Đình Hương', ngay_sinh: '16/05/2005', gioi_tinh: 'Nam', email: 'BJL230552@st.cmcu.edu.vn', so_dien_thoai: 988453811, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BJL230553', ten_nguoi_dung: 'Đinh Đức Mạnh', ngay_sinh: '17/05/2005', gioi_tinh: 'Nam', email: 'BJL230553@st.cmcu.edu.vn', so_dien_thoai: 988453812, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BJL230554', ten_nguoi_dung: 'Vũ Tuấn Khải', ngay_sinh: '18/05/2005', gioi_tinh: 'Nam', email: 'BJL230554@st.cmcu.edu.vn', so_dien_thoai: 988453813, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BJL230555', ten_nguoi_dung: 'Đinh Tiến Linh', ngay_sinh: '19/05/2005', gioi_tinh: 'Nam', email: 'BJL230555@st.cmcu.edu.vn', so_dien_thoai: 988453814, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BJL230556', ten_nguoi_dung: 'Nguyễn Thị Hà', ngay_sinh: '20/05/2005', gioi_tinh: 'Nữ', email: 'BJL230556@st.cmcu.edu.vn', so_dien_thoai: 988453815, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'BJL230557', ten_nguoi_dung: 'Nguyễn Thị Mai', ngay_sinh: '21/05/2005', gioi_tinh: 'Nữ', email: 'BJL230557@st.cmcu.edu.vn', so_dien_thoai: 988453816, mat_khau: '123456', vai_tro: 'student' },
+    { ma_nguoi_dung: 'nhhuy', ten_nguoi_dung: 'Ngô Hoàng Huy', ngay_sinh: '12/6/1970', gioi_tinh: 'Nam', email: 'nhhuy@cmcu.edu.vn', so_dien_thoai: 988453817, mat_khau: '123456', vai_tro: 'teacher' },
+    { ma_nguoi_dung: 'ntvanh', ten_nguoi_dung: 'Nguyễn Thị Vân Anh', ngay_sinh: '23/1/1982', gioi_tinh: 'Nữ', email: 'ntvanh@cmcu.edu.vn', so_dien_thoai: 988453818, mat_khau: '123456', vai_tro: 'teacher' },
   ];
   
   // Complete rooms collection with all rooms from database - VPC1, VPC2, VPC3 buildings
   let roomsCollection: MongoRoom[] = [
-    // VPC1 Building
-    {
-      _id: "room_vpc1_101",
-      Ma_phong: "VPC1_101",
-      So_phong: 101,
-      Co_so: "VPC1",
-      "Dien_tich (m2)": 30,
-      Co_so_vat_chat: "['Máy chiếu', 'Wifi', 'Bảng trắng', 'Điều hòa']",
-      Suc_chua: 35,
-      Mo_ta: "Phòng học nhỏ phù hợp cho các buổi thảo luận và học tập nhóm",
-      Quy_dinh: "Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng",
-      trang_thai: "available",
-    },
-    {
-      _id: "room_vpc1_102",
-      Ma_phong: "VPC1_102",
-      So_phong: 102,
-      Co_so: "VPC1",
-      "Dien_tich (m2)": 32,
-      Co_so_vat_chat: "['Máy chiếu', 'Wifi', 'Máy tính', 'Bảng trắng']",
-      Suc_chua: 30,
-      Mo_ta: "Phòng lab nhỏ với trang thiết bị cơ bản cho thực hành",
-      Quy_dinh: "Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng",
-      trang_thai: "available",
-    },
-    {
-      _id: "room_vpc1_201",
-      Ma_phong: "VPC1_201",
-      So_phong: 201,
-      Co_so: "VPC1",
-      "Dien_tich (m2)": 45,
-      Co_so_vat_chat: "['Máy chiếu', 'Wifi', 'Điều hòa', 'Hệ thống âm thanh']",
-      Suc_chua: 50,
-      Mo_ta: "Phòng học chuẩn với đầy đủ trang thiết bị hiện đại",
-      Quy_dinh: "Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng",
-      trang_thai: "available",
-    },
-  
-    // VPC2 Building - Floor 2
-    {
-      _id: "room_vpc2_201",
-      Ma_phong: "VPC2_201",
-      So_phong: 201,
-      Co_so: "VPC2",
-      "Dien_tich (m2)": 40,
-      Co_so_vat_chat: "['Máy chiếu', 'Wifi', 'Điều hòa', 'Hệ thống âm thanh']",
-      Suc_chua: 50,
-      Mo_ta: "Phòng học hiện đại với đầy đủ trang thiết bị phục vụ việc học tập",
-      Quy_dinh: "Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng",
-      trang_thai: "available",
-    },
-    {
-      _id: "684fd10b6b63cfd0441d7eab",
-      Ma_phong: "VPC2_202",
-      So_phong: 202,
-      Co_so: "VPC2",
-      "Dien_tich (m2)": 45,
-      Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']",
-      Suc_chua: 55,
-      Mo_ta: "Phòng học lý thuyết có đầy đủ thiết bị trình chiếu",
-      Quy_dinh: "Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng",
-      trang_thai: "available",
-    },
-    {
-      _id: "room_vpc2_301",
-      Ma_phong: "VPC2_301",
-      So_phong: 301,
-      Co_so: "VPC2",
-      "Dien_tich (m2)": 60,
-      Co_so_vat_chat:
-        "['Máy chiếu', 'Bảng trắng', 'Wifi', 'Hệ thống âm thanh', 'Điều hòa']",
-      Suc_chua: 80,
-      Mo_ta:
-        "Hội trường lớn phù hợp cho các sự kiện, hội thảo và buổi thuyết trình",
-      Quy_dinh: "Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng",
-      trang_thai: "available",
-    },
-    {
-      _id: "room_vpc2_302",
-      Ma_phong: "VPC2_302",
-      So_phong: 302,
-      Co_so: "VPC2",
-      "Dien_tich (m2)": 35,
-      Co_so_vat_chat: "['Máy chiếu', 'Wifi', 'Máy tính', 'Dây HDMI']",
-      Suc_chua: 25,
-      Mo_ta:
-        "Phòng lab máy tính với trang thiết bị hiện đại cho thực hành lập trình",
-      Quy_dinh: "Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng",
-      trang_thai: "available",
-    },
-  
-    // VPC3 Building
-    {
-      _id: "room_vpc3_101",
-      Ma_phong: "VPC3_101",
-      So_phong: 101,
-      Co_so: "VPC3",
-      "Dien_tich (m2)": 70,
-      Co_so_vat_chat:
-        "['Máy chiếu', 'Wifi', 'Điều hòa', 'Hệ thống âm thanh', 'Màn hình lớn']",
-      Suc_chua: 100,
-      Mo_ta:
-        "Hội trường chính của trường, phù hợp cho các sự kiện lớn và lễ kỷ niệm",
-      Quy_dinh: "Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng",
-      trang_thai: "available",
-    },
+    { Ma_phong: 'VPC2_201', So_phong: 201, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_202', So_phong: 202, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_203', So_phong: 203, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_204', So_phong: 204, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_205', So_phong: 205, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_301', So_phong: 301, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_302', So_phong: 302, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_303', So_phong: 303, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_304', So_phong: 304, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_305', So_phong: 305, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_401', So_phong: 401, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_402', So_phong: 402, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_403', So_phong: 403, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_404', So_phong: 404, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_501', So_phong: 501, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_502', So_phong: 502, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_503', So_phong: 503, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_504', So_phong: 504, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_505', So_phong: 505, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_601', So_phong: 601, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_602', So_phong: 602, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_603', So_phong: 603, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_604', So_phong: 604, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_605', So_phong: 605, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_701', So_phong: 701, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Tủ sách', 'Sách', 'máy mượn sách']", Suc_chua: 20, Mo_ta: 'Phòng thư viện trường có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_702', So_phong: 702, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 70, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1101', So_phong: 1101, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1102', So_phong: 1102, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1103', So_phong: 1103, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1104', So_phong: 1104, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1105', So_phong: 1105, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1201', So_phong: 1201, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1202', So_phong: 1202, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1203', So_phong: 1203, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1204', So_phong: 1204, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
+    { Ma_phong: 'VPC2_1205', So_phong: 1205, Co_so: 'VPC2', "Dien_tich (m2)": 45, Co_so_vat_chat: "['Máy chiếu', 'Bàn', 'Ghế', 'Dây HDMI', 'Bảng trắng']", Suc_chua: 55, Mo_ta: 'Phòng học lý thuyết có đầy đủ thiết bị trình chiếu', Quy_dinh: 'Không ăn uống, giữ gìn vệ sinh, tắt thiết bị sau khi sử dụng', trang_thai: 'available' },
   ];
   
   let bookingHistoryCollection: MongoBookingHistory[] = [
+    // Booking mẫu cho phòng VPC2_201, ngày 10/07/2025, ca 08:00-10:00
     {
-      _id: "684fd0bf9a560218492c74ca",
-      Ma_phong: "VPC2_202",
-      Ngay: "11/06/2025",
-      Email: "teacher1@st.cmc.edu.vn",
-      Ma_nguoi_dung: "GV001",
-      Ten_nguoi_dung: "TS. Trần Thị B",
-      Ly_do: "Lớp học Lập trình Java",
-      Ca: "1",
-      Ngay_dat: "11/06/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_001",
-      Ma_phong: "VPC1_101",
-      Ngay: "2025-01-20",
-      Email: "BIT230372@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230372",
-      Ten_nguoi_dung: "Nguyễn Thị Tâm",
-      Ly_do: "Học nhóm môn Lập trình Web",
-      Ca: "2",
-      Ngay_dat: "2025-01-18",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_002",
-      Ma_phong: "VPC1_201",
-      Ngay: "2025-01-21",
-      Email: "BIT230372@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230372",
-      Ten_nguoi_dung: "Nguyễn Thị Tâm",
-      Ly_do: "Thuyết trình dự án cuối kỳ",
-      Ca: "3",
-      Ngay_dat: "2025-01-19",
-      trang_thai: "pending",
-    },
-    {
-      _id: "booking_003",
-      Ma_phong: "VPC2_102",
-      Ngay: "2025-01-22",
-      Email: "BIT230101@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230101",
-      Ten_nguoi_dung: "Trần Văn Nam",
-      Ly_do: "Thực hành môn Cơ sở dữ liệu",
-      Ca: "1",
-      Ngay_dat: "2025-01-20",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_004",
-      Ma_phong: "VPC3_301",
-      Ngay: "2025-01-23",
-      Email: "BIT230245@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230245",
-      Ten_nguoi_dung: "Lê Thị Hoa",
-      Ly_do: "Họp nhóm dự án",
-      Ca: "4",
-      Ngay_dat: "2025-01-21",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_005",
-      Ma_phong: "VPC1_102",
-      Ngay: "2025-01-24",
-      Email: "BIT230156@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230156",
-      Ten_nguoi_dung: "Phạm Minh Tuấn",
-      Ly_do: "Ôn tập thi cuối kỳ",
-      Ca: "5",
-      Ngay_dat: "2025-01-22",
-      trang_thai: "pending",
-    },
-    {
-      _id: "booking_006",
       Ma_phong: "VPC2_201",
-      Ngay: "2025-01-20",
-      Email: "teacher1@st.cmc.edu.vn",
-      Ma_nguoi_dung: "GV001",
-      Ten_nguoi_dung: "TS. Trần Thị B",
-      Ly_do: "Lớp học Lập trình Java",
-      Ca: "2",
-      Ngay_dat: "2025-01-18",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_007",
-      Ma_phong: "VPC3_201",
-      Ngay: "2025-01-21",
-      Email: "nvminh@st.cmc.edu.vn",
-      Ma_nguoi_dung: "GV002",
-      Ten_nguoi_dung: "PGS.TS. Nguyễn Văn Minh",
-      Ly_do: "Lớp học Cơ sở dữ liệu",
-      Ca: "3",
-      Ngay_dat: "2025-01-19",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_008",
-      Ma_phong: "VPC1_301",
-      Ngay: "2025-01-22",
-      Email: "BIT230372@st.cmc.edu.vn",
+      Ngay: "10/07/2025",
+      Email: "test@cmc.edu.vn",
       Ma_nguoi_dung: "BIT230372",
-      Ten_nguoi_dung: "Nguyễn Thị Tâm",
-      Ly_do: "Thực hành môn Lập trình di động",
-      Ca: "1",
-      Ngay_dat: "2025-01-20",
-      trang_thai: "cancelled",
+      Ten_nguoi_dung: "Nguyễn Văn A",
+      Ly_do: "Họp nhóm",
+      Ca: "08:00-10:00",
+      Khung_gio: "08:00-10:00",
+      So_nguoi: 10,
+      Ngay_dat: "09/07/2025",
+      trang_thai: "confirmed"
     },
-    // Thêm booking cho tuần hiện tại để test
-    {
-      _id: "booking_current_001",
-      Ma_phong: "VPC1_101",
-      Ngay: "27/01/2025",
-      Email: "BIT230372@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230372",
-      Ten_nguoi_dung: "Nguyễn Thị Tâm",
-      Ly_do: "Học nhóm môn Lập trình Web",
-      Ca: "1",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_current_002",
-      Ma_phong: "VPC2_201",
-      Ngay: "28/01/2025",
-      Email: "teacher1@st.cmc.edu.vn",
-      Ma_nguoi_dung: "GV001",
-      Ten_nguoi_dung: "TS. Trần Thị B",
-      Ly_do: "Lớp học Lập trình Java",
-      Ca: "2",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_current_003",
-      Ma_phong: "VPC3_301",
-      Ngay: "29/01/2025",
-      Email: "BIT230101@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230101",
-      Ten_nguoi_dung: "Trần Văn Nam",
-      Ly_do: "Thực hành môn Cơ sở dữ liệu",
-      Ca: "1",
-      Ngay_dat: "27/01/2025",
-      trang_thai: "pending",
-    },
-    {
-      _id: "booking_current_004",
-      Ma_phong: "VPC1_201",
-      Ngay: "30/01/2025",
-      Email: "BIT230245@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230245",
-      Ten_nguoi_dung: "Lê Thị Hoa",
-      Ly_do: "Họp nhóm dự án",
-      Ca: "4",
-      Ngay_dat: "28/01/2025",
-      trang_thai: "confirmed",
-    },
-    // Thêm thêm booking để test giao diện
-    {
-      _id: "booking_current_005",
-      Ma_phong: "VPC2_102",
-      Ngay: "27/01/2025",
-      Email: "BIT230156@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230156",
-      Ten_nguoi_dung: "Phạm Minh Tuấn",
-      Ly_do: "Ôn tập thi cuối kỳ",
-      Ca: "5",
-      Ngay_dat: "25/01/2025",
-      trang_thai: "pending",
-    },
-    {
-      _id: "booking_current_006",
-      Ma_phong: "VPC3_201",
-      Ngay: "28/01/2025",
-      Email: "BIT230372@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230372",
-      Ten_nguoi_dung: "Nguyễn Thị Tâm",
-      Ly_do: "Thực hành môn Lập trình di động",
-      Ca: "1",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_current_007",
-      Ma_phong: "VPC1_301",
-      Ngay: "29/01/2025",
-      Email: "teacher1@st.cmc.edu.vn",
-      Ma_nguoi_dung: "GV001",
-      Ten_nguoi_dung: "TS. Trần Thị B",
-      Ly_do: "Lớp học Cơ sở dữ liệu",
-      Ca: "2",
-      Ngay_dat: "27/01/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_current_008",
-      Ma_phong: "VPC2_202",
-      Ngay: "30/01/2025",
-      Email: "BIT230101@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230101",
-      Ten_nguoi_dung: "Trần Văn Nam",
-      Ly_do: "Thuyết trình dự án",
-      Ca: "3",
-      Ngay_dat: "28/01/2025",
-      trang_thai: "pending",
-    },
-    // Thêm booking cho ngày hôm nay để test màu sắc
-    {
-      _id: "booking_today_001",
-      Ma_phong: "VPC1_101",
-      Ngay: "27/01/2025",
-      Email: "BIT230372@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230372",
-      Ten_nguoi_dung: "Nguyễn Thị Tâm",
-      Ly_do: "Học nhóm môn Lập trình Web",
-      Ca: "1",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_today_002",
-      Ma_phong: "VPC2_201",
-      Ngay: "27/01/2025",
-      Email: "teacher1@st.cmc.edu.vn",
-      Ma_nguoi_dung: "GV001",
-      Ten_nguoi_dung: "TS. Trần Thị B",
-      Ly_do: "Lớp học Lập trình Java",
-      Ca: "2",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_today_003",
-      Ma_phong: "VPC3_301",
-      Ngay: "27/01/2025",
-      Email: "BIT230101@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230101",
-      Ten_nguoi_dung: "Trần Văn Nam",
-      Ly_do: "Thực hành môn Cơ sở dữ liệu",
-      Ca: "3",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "pending",
-    },
-    // Thêm booking cho tuần hiện tại
-    {
-      _id: "booking_week_001",
-      Ma_phong: "VPC1_102",
-      Ngay: "28/01/2025",
-      Email: "BIT230245@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230245",
-      Ten_nguoi_dung: "Lê Thị Hoa",
-      Ly_do: "Họp nhóm dự án",
-      Ca: "4",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_week_002",
-      Ma_phong: "VPC2_102",
-      Ngay: "29/01/2025",
-      Email: "BIT230156@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230156",
-      Ten_nguoi_dung: "Phạm Minh Tuấn",
-      Ly_do: "Ôn tập thi cuối kỳ",
-      Ca: "5",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "confirmed",
-    },
-    {
-      _id: "booking_week_003",
-      Ma_phong: "VPC3_201",
-      Ngay: "30/01/2025",
-      Email: "BIT230372@st.cmc.edu.vn",
-      Ma_nguoi_dung: "BIT230372",
-      Ten_nguoi_dung: "Nguyễn Thị Tâm",
-      Ly_do: "Thực hành môn Lập trình di động",
-      Ca: "1",
-      Ngay_dat: "26/01/2025",
-      trang_thai: "confirmed",
-    },
+    { Ma_phong: 'VPC2_502', Ngay: '10/06/2025', Email: 'nvhung@cmcu.edu.vn', Ma_nguoi_dung: 'nvhung', Ten_nguoi_dung: 'Nguyễn Văn Hùng', Ly_do: '1-3-24(N03)/23IT2', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '10/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '11/06/2025', Email: 'nvhung@cmcu.edu.vn', Ma_nguoi_dung: 'nvhung', Ten_nguoi_dung: 'Nguyễn Văn Hùng', Ly_do: '1-3-24(N05)/23IT2', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '11/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '12/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N02)/23IT2', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '12/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '13/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N03)/23IT2', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '13/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '16/06/2025', Email: 'BIT230373@st.cmcu.edu.vn', Ma_nguoi_dung: 'BIT230373', Ten_nguoi_dung: 'Trần Văn Minh', Ly_do: '1-3-24(N03)/23IT2', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '16/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '16/06/2025', Email: 'BJL230557@st.cmcu.edu.vn', Ma_nguoi_dung: 'BJL230557', Ten_nguoi_dung: 'Nguyễn Thị Mai', Ly_do: 'Họp câu lập bộ', Ca: 'Tiết 13', Khung_gio: '', So_nguoi: 30, Ngay_dat: '16/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '16/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N02)/23IT2', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '17/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '16/06/2025', Email: 'nvhung@cmcu.edu.vn', Ma_nguoi_dung: 'nvhung', Ten_nguoi_dung: 'Nguyễn Văn Hùng', Ly_do: '1-3-24(N05)/23IT2', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '18/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '17/06/2025', Email: 'nvhung@cmcu.edu.vn', Ma_nguoi_dung: 'nvhung', Ten_nguoi_dung: 'Nguyễn Văn Hùng', Ly_do: '1-3-24(N03)/23IT2', Ca: 'Tiết 13-14', Khung_gio: '', So_nguoi: 30, Ngay_dat: '18/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '17/06/2025', Email: 'BIT240210@st.cmcu.edu.vn', Ma_nguoi_dung: 'BIT240210', Ten_nguoi_dung: 'Nguyễn Duy Mạnh Khoa', Ly_do: 'Mượn để làm đề tài nhóm', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '17/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '18/06/2025', Email: 'BMK240213@st.cmcu.edu.vn', Ma_nguoi_dung: 'BMK240213', Ten_nguoi_dung: 'Phạm Khánh Linh', Ly_do: 'Mượn để làm đề tài nhóm', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '18/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '18/06/2025', Email: 'BIT240222@st.cmcu.edu.vn', Ma_nguoi_dung: 'BIT240222', Ten_nguoi_dung: 'Nguyễn Đức Khánh', Ly_do: 'Họp câu lập bộ', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '18/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_503', Ngay: '18/06/2025', Email: 'BIT240223@st.cmcu.edu.vn', Ma_nguoi_dung: 'BIT240223', Ten_nguoi_dung: 'Nguyễn Văn Đạt', Ly_do: 'Họp câu lập bộ', Ca: 'Tiết 3-6', Khung_gio: '', So_nguoi: 30, Ngay_dat: '18/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_504', Ngay: '18/06/2025', Email: 'BIT240224@st.cmcu.edu.vn', Ma_nguoi_dung: 'BIT240224', Ten_nguoi_dung: 'Lê Danh Minh', Ly_do: 'Mượn để làm đề tài nhóm', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '18/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '19/06/2025', Email: 'BJL230552@st.cmcu.edu.vn', Ma_nguoi_dung: 'BJL230552', Ten_nguoi_dung: 'Nguyễn Đình Hương', Ly_do: 'Họp câu lập bộ', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '18/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '19/06/2025', Email: 'BJL230553@st.cmcu.edu.vn', Ma_nguoi_dung: 'BJL230553', Ten_nguoi_dung: 'Đinh Đức Mạnh', Ly_do: 'Họp câu lập bộ', Ca: 'Tiết 13-14', Khung_gio: '', So_nguoi: 30, Ngay_dat: '19/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_502', Ngay: '20/06/2025', Email: 'BJL230554@st.cmcu.edu.vn', Ma_nguoi_dung: 'BJL230554', Ten_nguoi_dung: 'Vũ Tuấn Khải', Ly_do: 'Họp câu lập bộ', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '19/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '20/06/2025', Email: 'nhhuy@cmcu.edu.vn', Ma_nguoi_dung: 'nhhuy', Ten_nguoi_dung: 'Ngô Hoàng Huy', Ly_do: '1-3-24(N09)/23IT6', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '20/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '20/06/2025', Email: 'nhhuy@cmcu.edu.vn', Ma_nguoi_dung: 'nhhuy', Ten_nguoi_dung: 'Ngô Hoàng Huy', Ly_do: '1-3-24(N09)/23IT6', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '20/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '23/06/2025', Email: 'nvhung@cmcu.edu.vn', Ma_nguoi_dung: 'nvhung', Ten_nguoi_dung: 'Nguyễn Văn Hùng', Ly_do: '1-3-24(N07)/23IT6', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '23/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '24/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N06)/23IT6', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '24/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '25/06/2025', Email: 'nhhuy@cmcu.edu.vn', Ma_nguoi_dung: 'nhhuy', Ten_nguoi_dung: 'Ngô Hoàng Huy', Ly_do: '1-3-24(N09)/23IT6', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '25/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '25/06/2025', Email: 'nhhuy@cmcu.edu.vn', Ma_nguoi_dung: 'nhhuy', Ten_nguoi_dung: 'Ngô Hoàng Huy', Ly_do: '1-3-24(N09)/23IT6', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '25/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '26/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N06)/23IT6', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '26/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '26/06/2025', Email: 'nvhung@cmcu.edu.vn', Ma_nguoi_dung: 'nvhung', Ten_nguoi_dung: 'Nguyễn Văn Hùng', Ly_do: '1-3-24(N07)/23IT6', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '26/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '27/06/2025', Email: 'nhhuy@cmcu.edu.vn', Ma_nguoi_dung: 'nhhuy', Ten_nguoi_dung: 'Ngô Hoàng Huy', Ly_do: '1-3-24(N09)/23IT6', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '27/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_404', Ngay: '27/06/2025', Email: 'nhhuy@cmcu.edu.vn', Ma_nguoi_dung: 'nhhuy', Ten_nguoi_dung: 'Ngô Hoàng Huy', Ly_do: '1-3-24(N09)/23IT6', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '27/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '23/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N06)/23IT3', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '23/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '23/06/2025', Email: 'ntvanh@cmcu.edu.vn', Ma_nguoi_dung: 'ntvanh', Ten_nguoi_dung: 'Nguyễn Thị Vân Anh', Ly_do: '1-3-24(N04)/23IT3', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '23/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '24/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N06)/23IT3', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '24/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '24/06/2025', Email: 'ntvanh@cmcu.edu.vn', Ma_nguoi_dung: 'ntvanh', Ten_nguoi_dung: 'Nguyễn Thị Vân Anh', Ly_do: '1-3-24(N03)/23IT3', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '24/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '25/06/2025', Email: 'ntvanh@cmcu.edu.vn', Ma_nguoi_dung: 'ntvanh', Ten_nguoi_dung: 'Nguyễn Thị Vân Anh', Ly_do: '1-3-24(N03)/23IT3', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '25/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '25/06/2025', Email: 'ntvanh@cmcu.edu.vn', Ma_nguoi_dung: 'ntvanh', Ten_nguoi_dung: 'Nguyễn Thị Vân Anh', Ly_do: '1-3-24(N06)/23IT3', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '25/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '26/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N03)/23IT3', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '26/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_403', Ngay: '27/06/2025', Email: 'ntvanh@cmcu.edu.vn', Ma_nguoi_dung: 'ntvanh', Ten_nguoi_dung: 'Nguyễn Thị Vân Anh', Ly_do: '1-3-24(N04)/23IT3', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '27/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_402', Ngay: '23/06/2025', Email: 'nvhung@cmcu.edu.vn', Ma_nguoi_dung: 'nvhung', Ten_nguoi_dung: 'Nguyễn Văn Hùng', Ly_do: '1-3-24(N05)/23IT4', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '23/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_402', Ngay: '24/06/2025', Email: 'nhhuy@cmcu.edu.vn', Ma_nguoi_dung: 'nhhuy', Ten_nguoi_dung: 'Ngô Hoàng Huy', Ly_do: '1-3-24(N07)/23IT4', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '24/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_402', Ngay: '25/06/2025', Email: 'ttlan@st.cmcu.edu.vn', Ma_nguoi_dung: 'ttlan', Ten_nguoi_dung: 'Trần Thị Lan', Ly_do: '1-3-24(N04)/23IT4', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '25/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_402', Ngay: '26/06/2025', Email: 'nhhuy@cmcu.edu.vn', Ma_nguoi_dung: 'nhhuy', Ten_nguoi_dung: 'Ngô Hoàng Huy', Ly_do: '1-3-24(N07)/23IT4', Ca: 'Tiết 7-9', Khung_gio: '', So_nguoi: 30, Ngay_dat: '26/06/2025', trang_thai: 'confirmed' },
+    { Ma_phong: 'VPC2_402', Ngay: '27/06/2005', Email: 'nvhung@cmcu.edu.vn', Ma_nguoi_dung: 'nvhung', Ten_nguoi_dung: 'Nguyễn Văn Hùng', Ly_do: '1-3-24(N05)/23IT4', Ca: 'Tiết 10-12', Khung_gio: '', So_nguoi: 30, Ngay_dat: '27/06/2005', trang_thai: 'confirmed' },
   ];
   
   let scheduleCollection: MongoSchedule[] = [
-    {
-      _id: "schedule_001",
-      Ca: 1,
-      "Giờ bắt đầu": "07:00:00",
-      "Giờ kết thúc": "07:45:00",
-    },
-    {
-      _id: "schedule_002",
-      Ca: 2,
-      "Giờ bắt đầu": "07:50:00",
-      "Giờ kết thúc": "08:35:00",
-    },
-    {
-      _id: "schedule_003",
-      Ca: 3,
-      "Giờ bắt đầu": "08:40:00",
-      "Giờ kết thúc": "09:25:00",
-    },
-    {
-      _id: "684fcfa5fccdf2aa7e991e14",
-      Ca: 4,
-      "Giờ bắt đầu": "09:15:00",
-      "Giờ kết thúc": "10:00:00",
-    },
-    {
-      _id: "schedule_005",
-      Ca: 5,
-      "Giờ bắt đầu": "10:05:00",
-      "Giờ kết thúc": "10:50:00",
-    },
+    { _id: "schedule_001", Ca: 1, "Giờ bắt đầu": "6:45", "Giờ kết thúc": "7:30" },
+    { _id: "schedule_002", Ca: 2, "Giờ bắt đầu": "7:35", "Giờ kết thúc": "8:20" },
+    { _id: "schedule_003", Ca: 3, "Giờ bắt đầu": "8:25", "Giờ kết thúc": "9:10" },
+    { _id: "schedule_004", Ca: 4, "Giờ bắt đầu": "9:15", "Giờ kết thúc": "10:00" },
+    { _id: "schedule_005", Ca: 5, "Giờ bắt đầu": "10:05", "Giờ kết thúc": "10:50" },
+    { _id: "schedule_006", Ca: 6, "Giờ bắt đầu": "12:30", "Giờ kết thúc": "13:15" },
+    { _id: "schedule_007", Ca: 7, "Giờ bắt đầu": "13:20", "Giờ kết thúc": "14:05" },
+    { _id: "schedule_008", Ca: 8, "Giờ bắt đầu": "14:10", "Giờ kết thúc": "14:55" },
+    { _id: "schedule_009", Ca: 9, "Giờ bắt đầu": "15:00", "Giờ kết thúc": "15:45" },
+    { _id: "schedule_010", Ca: 10, "Giờ bắt đầu": "15:50", "Giờ kết thúc": "16:35" },
+    { _id: "schedule_011", Ca: 11, "Giờ bắt đầu": "17:30", "Giờ kết thúc": "18:15" },
+    { _id: "schedule_012", Ca: 12, "Giờ bắt đầu": "18:20", "Giờ kết thúc": "19:05" },
+    { _id: "schedule_013", Ca: 13, "Giờ bắt đầu": "19:10", "Giờ kết thúc": "19:55" },
+    { _id: "schedule_014", Ca: 14, "Giờ bắt đầu": "20:00", "Giờ kết thúc": "20:45" },
+    { _id: "schedule_015", Ca: 15, "Giờ bắt đầu": "20:50", "Giờ kết thúc": "21:35" },
   ];
   
   export const connectMongoDB = async (): Promise<boolean> => {
@@ -661,7 +352,6 @@ interface MongoUser {
       const userIndex = usersCollection.findIndex((user) => user.email === email);
       if (userIndex !== -1) {
         usersCollection[userIndex].mat_khau = newPassword;
-        saveToStorage('users');
         console.log("🔐 Password updated for:", email);
         return true;
       }
@@ -675,7 +365,6 @@ interface MongoUser {
         _id: `user_${Date.now()}`,
       };
       usersCollection.push(newUser);
-      saveToStorage('users');
       console.log("👤 New user created:", newUser.email);
       return newUser;
     },
@@ -685,8 +374,21 @@ interface MongoUser {
       const userIndex = usersCollection.findIndex((user) => user._id === userId);
       if (userIndex !== -1) {
         usersCollection.splice(userIndex, 1);
-        saveToStorage('users');
         console.log("🗑️ User deleted:", userId);
+        return true;
+      }
+      return false;
+    },
+
+    async updateUser(userId: string, updateData: Partial<MongoUser>): Promise<boolean> {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const userIndex = usersCollection.findIndex((user) => user._id === userId);
+      if (userIndex !== -1) {
+        usersCollection[userIndex] = {
+          ...usersCollection[userIndex],
+          ...updateData,
+        };
+        console.log("🔄 User updated:", userId);
         return true;
       }
       return false;
@@ -711,7 +413,6 @@ interface MongoUser {
         _id: `room_${Date.now()}`,
       };
       roomsCollection.push(newRoom);
-      saveToStorage('rooms');
       console.log("🏢 New room created:", newRoom.Ma_phong);
       return newRoom;
     },
@@ -729,7 +430,6 @@ interface MongoUser {
           ...roomsCollection[roomIndex],
           ...updateData,
         };
-        saveToStorage('rooms');
         console.log("🔄 Room updated:", maPhong);
         return true;
       }
@@ -743,7 +443,6 @@ interface MongoUser {
       );
       if (roomIndex !== -1) {
         roomsCollection.splice(roomIndex, 1);
-        saveToStorage('rooms');
         console.log("🗑️ Room deleted:", maPhong);
         return true;
       }
@@ -756,6 +455,7 @@ interface MongoUser {
       ca: string,
     ): Promise<boolean> {
       await new Promise((resolve) => setTimeout(resolve, 200));
+      console.log("CheckRoomAvailability:", maPhong, ngay, ca);
       const existingBooking = bookingHistoryCollection.find(
         (booking) =>
           booking.Ma_phong === maPhong &&
@@ -791,7 +491,6 @@ interface MongoUser {
       };
   
       bookingHistoryCollection.push(newBooking);
-      saveToStorage('bookings');
       console.log(
         "📅 New booking created:",
         newBooking._id,
@@ -812,7 +511,6 @@ interface MongoUser {
       );
       if (bookingIndex !== -1) {
         bookingHistoryCollection[bookingIndex].trang_thai = status;
-        saveToStorage('bookings');
         console.log("🔄 Booking status updated:", id, status);
         return true;
       }

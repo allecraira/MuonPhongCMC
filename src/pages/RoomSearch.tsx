@@ -333,11 +333,7 @@ const RoomSearch = () => {
                         {getStatusBadge(room.trang_thai)}
                       </div>
                       <img
-                        src={`https://images.unsplash.com/photo-${
-                          room.So_phong % 2 === 0
-                            ? "1577412647305-991150c7d163"
-                            : "1562774053-701939374585"
-                        }?w=400&h=240&fit=crop&crop=center`}
+                        src={`https://flc.cmc-u.edu.vn/wp-content/uploads/2023/03/307378429_160761036556717_8736783004804453023_n-600x600.jpg`}
                         alt={`Phòng ${room.So_phong}`}
                         className="w-full h-full object-cover"
                         onError={(e) => {

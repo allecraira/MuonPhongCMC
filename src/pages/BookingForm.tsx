@@ -47,7 +47,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { processBookingRequest } from "@/lib/emailService";
 import { useAuth } from "@/lib/auth";
-import { bookingService } from "@/lib/mongodb";
+import { bookingService, scheduleService, roomService } from "@/lib/mongodb";
 
 const BookingForm = () => {
   const navigate = useNavigate();
@@ -75,6 +75,9 @@ const BookingForm = () => {
     initialDate || new Date(),
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [availability, setAvailability] = useState<null | boolean>(null);
+  const [suggestedRooms, setSuggestedRooms] = useState<any[]>([]);
 
   // Auto-fill form when user data is available
   useEffect(() => {
@@ -87,6 +90,43 @@ const BookingForm = () => {
       }));
     }
   }, [user]);
+
+  useEffect(() => {
+    scheduleService.getAllSchedules().then(setSchedules);
+  }, []);
+
+  // Kiểm tra phòng đã được đặt chưa khi chọn ngày hoặc khung giờ
+  useEffect(() => {
+    const check = async () => {
+      setAvailability(null);
+      setSuggestedRooms([]);
+      if (!room || !selectedDate || !formData.selectedTime) return;
+      const dateStr = format(selectedDate, "dd/MM/yyyy");
+      const isAvailable = await roomService.checkRoomAvailability(
+        room.Ma_phong,
+        dateStr,
+        formData.selectedTime
+      );
+      setAvailability(isAvailable);
+      if (!isAvailable) {
+        // Gợi ý các phòng còn trống cùng khung giờ
+        const allRooms = await roomService.getAllRooms();
+        const availableRooms = [];
+        for (const r of allRooms) {
+          if (r.Ma_phong === room.Ma_phong) continue;
+          const ok = await roomService.checkRoomAvailability(
+            r.Ma_phong,
+            dateStr,
+            formData.selectedTime
+          );
+          if (ok) availableRooms.push(r);
+        }
+        console.log('Phòng còn trống cùng khung giờ:', availableRooms);
+        setSuggestedRooms(availableRooms);
+      }
+    };
+    check();
+  }, [room, selectedDate, formData.selectedTime]);
 
   // Redirect if no room data
   if (!room) {
@@ -151,7 +191,7 @@ const BookingForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Create booking in MongoDB
+      const selectedSchedule = schedules.find(s => s.Ca.toString() === formData.selectedTime);
       const bookingData = {
         Ma_phong: room.Ma_phong || room.id,
         Ngay: format(selectedDate, "dd/MM/yyyy"),
@@ -160,7 +200,7 @@ const BookingForm = () => {
         Ten_nguoi_dung: formData.bookerName,
         Ly_do: formData.purpose,
         Ca: formData.selectedTime,
-        Khung_gio: formData.selectedTime,
+        Khung_gio: selectedSchedule ? `${selectedSchedule["Giờ bắt đầu"]}-${selectedSchedule["Giờ kết thúc"]}` : "",
         So_nguoi: formData.attendees,
         Ngay_dat: format(new Date(), "dd/MM/yyyy"),
       };
@@ -360,22 +400,19 @@ const BookingForm = () => {
                       </Popover>
                     </div>
 
-                    <div>
-                      <Label htmlFor="selectedTime">Khung giờ *</Label>
+                    <div className="space-y-2">
+                      <Label>Khung giờ *</Label>
                       <Select
                         value={formData.selectedTime}
-                        onValueChange={(value) =>
-                          handleInputChange("selectedTime", value)
-                        }
-                        required
+                        onValueChange={(value) => handleInputChange("selectedTime", value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Chọn khung giờ" />
                         </SelectTrigger>
                         <SelectContent>
-                          {timeSlots.map((slot) => (
-                            <SelectItem key={slot.value} value={slot.value}>
-                              {slot.label}
+                          {schedules.map((s) => (
+                            <SelectItem key={s.Ca} value={s.Ca.toString()}>
+                              {s["Giờ bắt đầu"]} - {s["Giờ kết thúc"]} (Ca {s.Ca})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -383,38 +420,27 @@ const BookingForm = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="purpose">Mục đích sử dụng *</Label>
-                      <Textarea
-                        id="purpose"
-                        value={formData.purpose}
-                        onChange={(e) =>
-                          handleInputChange("purpose", e.target.value)
-                        }
-                        required
-                        placeholder="Ví dụ: Họp nhóm môn ABC, Seminar..."
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Số người tham gia *</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={formData.attendees}
+                      onChange={(e) => handleInputChange("attendees", parseInt(e.target.value) || 1)}
+                    />
+                  </div>
 
-                    <div>
-                      <Label htmlFor="attendees">Số lượng người tham gia *</Label>
-                      <Input
-                        id="attendees"
-                        type="number"
-                        min="1"
-                        max={room.Suc_chua || room.capacity || 50}
-                        value={formData.attendees}
-                        onChange={(e) =>
-                          handleInputChange("attendees", parseInt(e.target.value) || 1)
-                        }
-                        required
-                        placeholder="Nhập số lượng người"
-                      />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Tối đa: {room.Suc_chua || room.capacity || 50} người
-                      </p>
-                    </div>
+                  <div>
+                    <Label htmlFor="purpose">Mục đích sử dụng *</Label>
+                    <Textarea
+                      id="purpose"
+                      value={formData.purpose}
+                      onChange={(e) =>
+                        handleInputChange("purpose", e.target.value)
+                      }
+                      required
+                      placeholder="Ví dụ: Họp nhóm môn ABC, Seminar..."
+                    />
                   </div>
 
                   <div>
@@ -429,6 +455,27 @@ const BookingForm = () => {
                       rows={3}
                     />
                   </div>
+
+                  {/* Cảnh báo nếu phòng đã được đặt */}
+                  {availability === false && (
+                    <div className="p-4 bg-red-100 text-red-700 rounded-lg">
+                      Khung giờ này phòng đã được đặt! Vui lòng chọn khung giờ khác hoặc chọn phòng khác bên dưới.<br />
+                      <div className="mt-2">
+                        <span className="font-semibold">Phòng còn trống cùng khung giờ:</span>
+                        <ul className="list-disc ml-6 mt-1">
+                          {suggestedRooms.length === 0 ? (
+                            <li>Không còn phòng trống phù hợp.</li>
+                          ) : (
+                            suggestedRooms.map((r) => (
+                              <li key={r.Ma_phong}>
+                                <Link to={`/rooms/${r.So_phong}`} className="text-blue-600 underline">{r.Ma_phong} - Sức chứa: {r.Suc_chua}</Link>
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

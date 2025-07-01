@@ -29,7 +29,8 @@ import {
   CheckCircle,
   ImageIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { bookingService } from "@/lib/mongodb";
 
 // Mock room data - in production this would come from MongoDB
 const allRooms = [
@@ -105,12 +106,21 @@ const RoomDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date(),
-  );
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [activeTab, setActiveTab] = useState<string>("info");
+  const [bookings, setBookings] = useState<any[]>([]);
 
   // Get room data from location state or find by ID
   const room = location.state?.room || allRooms.find((r) => r.id === id);
+
+  // Lấy đúng mã phòng cho đồng bộ
+  const roomId = room?.Ma_phong || room?.id;
+
+  // Lấy danh sách booking thực tế từ API
+  useEffect(() => {
+    if (!roomId) return;
+    bookingService.getBookingsByRoom(roomId).then(setBookings);
+  }, [roomId]);
 
   // Helper function to parse equipment from MongoDB format
   const parseEquipment = (room: any): string[] => {
@@ -135,6 +145,13 @@ const RoomDetails = () => {
   // Get equipment array safely
   const equipment = parseEquipment(room);
 
+  // Lọc các booking của phòng theo ngày chọn
+  const getBookingsForSelectedDate = () => {
+    if (!selectedDate) return [];
+    const dateStr = selectedDate.toISOString().split("T")[0];
+    return bookings.filter(b => b.Ngay === dateStr);
+  };
+
   if (!room) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -158,6 +175,12 @@ const RoomDetails = () => {
 
   const handleBookNow = () => {
     navigate("/booking", { state: { room, selectedDate } });
+  };
+
+  // Khi chọn ngày ở lịch, tự động chuyển sang tab Lịch phòng
+  const handleSelectDate = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setActiveTab("schedule");
   };
 
   return (
@@ -214,7 +237,7 @@ const RoomDetails = () => {
             </div>
 
             {/* Tabs */}
-            <Tabs defaultValue="info" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="info">Thông tin</TabsTrigger>
                 <TabsTrigger value="images">Hình ảnh</TabsTrigger>
@@ -316,7 +339,7 @@ const RoomDetails = () => {
                       <div className="space-y-4">
                         <div className="aspect-video rounded-lg overflow-hidden">
                           <img
-                            src="https://images.unsplash.com/photo-1577412647305-991150c7d163?w=600&h=400&fit=crop&crop=center"
+                            src="https://fad.cmc-u.edu.vn/wp-content/uploads/2023/10/2-1.jpg"
                             alt="Hình ảnh tổng quan phòng"
                             className="w-full h-full object-cover"
                           />
@@ -324,14 +347,14 @@ const RoomDetails = () => {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="aspect-video rounded-lg overflow-hidden">
                             <img
-                              src="https://images.unsplash.com/photo-1562774053-701939374585?w=300&h=200&fit=crop&crop=center"
+                              src="https://fict.cmc-u.edu.vn/wp-content/uploads/2024/06/thumb-1024x576.jpg"
                               alt="Thiết bị máy chiếu"
                               className="w-full h-full object-cover"
                             />
                           </div>
                           <div className="aspect-video rounded-lg overflow-hidden">
                             <img
-                              src="https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=300&h=200&fit=crop&crop=center"
+                              src="https://fad.cmc-u.edu.vn/wp-content/uploads/2023/10/3-2.jpg"
                               alt="Bàn ghế học tập"
                               className="w-full h-full object-cover"
                             />
@@ -343,7 +366,7 @@ const RoomDetails = () => {
                       <div className="space-y-4">
                         <div className="aspect-video rounded-lg overflow-hidden">
                           <img
-                            src="https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=600&h=400&fit=crop&crop=center"
+                            src="https://cmcu.edu.vn/wp-content/uploads/2022/07/HDF_7208-copy-scaled.jpg"
                             alt="Góc nhìn từ phía sau"
                             className="w-full h-full object-cover"
                           />
@@ -351,14 +374,14 @@ const RoomDetails = () => {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="aspect-video rounded-lg overflow-hidden">
                             <img
-                              src="https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=300&h=200&fit=crop&crop=center"
+                              src="https://cmcu.edu.vn/wp-content/uploads/2025/05/DSC_3097-2-600x600.webp"
                               alt="Bảng trắng và dụng cụ"
                               className="w-full h-full object-cover"
                             />
                           </div>
                           <div className="aspect-video rounded-lg overflow-hidden">
                             <img
-                              src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop&crop=center"
+                              src="https://cmcu.edu.vn/wp-content/uploads/2021/05/ky-thuat-phan-mem-1024x576.jpg"
                               alt="Nội thất hiện đại"
                               className="w-full h-full object-cover"
                             />
@@ -375,7 +398,7 @@ const RoomDetails = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="aspect-square rounded-lg overflow-hidden relative">
                           <img
-                            src="https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=200&h=200&fit=crop&crop=center"
+                            src="https://flc.cmc-u.edu.vn/wp-content/uploads/2023/03/307307750_160761039890050_7306844713774799017_n-600x600.jpg"
                             alt="Điều hòa"
                             className="w-full h-full object-cover"
                           />
@@ -385,7 +408,7 @@ const RoomDetails = () => {
                         </div>
                         <div className="aspect-square rounded-lg overflow-hidden relative">
                           <img
-                            src="https://images.unsplash.com/photo-1544717302-de2939b7ef71?w=200&h=200&fit=crop&crop=center"
+                            src="https://static-images.vnncdn.net/vps_images_publish/000001/000003/2024/6/18/truong-dai-hoc-cmc-thanh-lap-khoa-moi-dao-tao-chuyen-sau-ve-vi-mach-ban-dan-2537.jpg?width=0&s=oAGd14KF8ImHEmwHpfo45Q"
                             alt="WiFi"
                             className="w-full h-full object-cover"
                           />
@@ -395,7 +418,7 @@ const RoomDetails = () => {
                         </div>
                         <div className="aspect-square rounded-lg overflow-hidden relative">
                           <img
-                            src="https://images.unsplash.com/photo-1583415452781-6d2678edd6cb?w=200&h=200&fit=crop&crop=center"
+                            src="https://cdn.giaoduc.net.vn/images/4567b617dad583be1e7afcde73e8465cb9830902ea53d7dc586850066561783da9ecfeef4ec1f4b8003fce6429ee8923e42150f8f56261942d43ebac0950ffbc/anh-3-9286-4934.jpg"
                             alt="Hệ thống âm thanh"
                             className="w-full h-full object-cover"
                           />
@@ -405,7 +428,7 @@ const RoomDetails = () => {
                         </div>
                         <div className="aspect-square rounded-lg overflow-hidden relative">
                           <img
-                            src="https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=200&h=200&fit=crop&crop=center"
+                            src="https://flc.cmc-u.edu.vn/wp-content/uploads/2023/11/2-600x600.jpg"
                             alt="Bàn ghế"
                             className="w-full h-full object-cover"
                           />
@@ -424,66 +447,36 @@ const RoomDetails = () => {
                   <CardHeader>
                     <CardTitle>Lịch sử dụng phòng</CardTitle>
                     <CardDescription>
-                      Xem lịch trình và tình trạng phòng
+                      Xem lịch trình và tình trạng phòng cho ngày đã chọn
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Clock className="h-5 w-5 text-green-600" />
-                          <div>
-                            <p className="font-medium">08:00 - 10:00</p>
-                            <p className="text-sm text-gray-600">Hôm nay</p>
+                      {/* Các khung giờ mẫu */}
+                      {[
+                        { label: "08:00-10:00" },
+                        { label: "10:00-12:00" },
+                        { label: "13:00-15:00" },
+                        { label: "15:00-17:00" },
+                      ].map(slot => {
+                        const booking = getBookingsForSelectedDate().find(b => b.Ca === slot.label);
+                        return (
+                          <div key={slot.label} className={`flex items-center justify-between p-4 rounded-lg ${booking ? "bg-red-50" : "bg-green-50"}`}>
+                            <div className="flex items-center space-x-3">
+                              <Clock className={`h-5 w-5 ${booking ? "text-red-600" : "text-green-600"}`} />
+                              <div>
+                                <p className="font-medium">{slot.label}</p>
+                                <p className="text-sm text-gray-600">
+                                  {booking ? `${booking.Ly_do} (${booking.Ten_nguoi_dung})` : "Có sẵn"}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge className={booking ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}>
+                              {booking ? "Đã đặt" : "Có sẵn"}
+                            </Badge>
                           </div>
-                        </div>
-                        <Badge className="bg-green-100 text-green-800">
-                          Có sẵn
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Clock className="h-5 w-5 text-red-600" />
-                          <div>
-                            <p className="font-medium">10:00 - 12:00</p>
-                            <p className="text-sm text-gray-600">
-                              Lớp Lập trình Java
-                            </p>
-                          </div>
-                        </div>
-                        <Badge className="bg-red-100 text-red-800">
-                          Đã đặt
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Clock className="h-5 w-5 text-green-600" />
-                          <div>
-                            <p className="font-medium">13:00 - 15:00</p>
-                            <p className="text-sm text-gray-600">Hôm nay</p>
-                          </div>
-                        </div>
-                        <Badge className="bg-green-100 text-green-800">
-                          Có sẵn
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Clock className="h-5 w-5 text-red-600" />
-                          <div>
-                            <p className="font-medium">15:00 - 17:00</p>
-                            <p className="text-sm text-gray-600">
-                              Họp nhóm dự án
-                            </p>
-                          </div>
-                        </div>
-                        <Badge className="bg-red-100 text-red-800">
-                          Đã đặt
-                        </Badge>
-                      </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -508,7 +501,7 @@ const RoomDetails = () => {
                   <Calendar
                     mode="single"
                     selected={selectedDate}
-                    onSelect={setSelectedDate}
+                    onSelect={handleSelectDate}
                     className="rounded-md border"
                   />
                 </div>

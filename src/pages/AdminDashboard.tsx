@@ -1,1152 +1,419 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import EmailTestDialog from "@/components/EmailTestDialog";
-import { useNotification } from "@/contexts/NotificationContext";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/lib/auth";
-import {
-  userService,
-  roomService,
-  bookingService,
-  MongoUser,
-  MongoRoom,
-  MongoBookingHistory,
-} from "@/lib/mongodb";
-import {
-  Users,
-  Building2,
-  Calendar,
-  BarChart3,
-  Settings,
-  UserPlus,
-  Edit,
-  Trash2,
-  Shield,
-  ArrowLeft,
-  Mail,
-  Phone,
-  Hash,
-  Loader2,
-  Plus,
-} from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { userService, roomService, bookingService, MongoUser, MongoRoom } from "@/lib/mongodb";
+import { PieChart, BarChart3 } from "lucide-react";
+
+// Báo cáo phòng cho bảo vệ
+interface RoomReport {
+  id: string;
+  room: string;
+  date: string;
+  status: string;
+  note: string;
+}
+
+const getTopRooms = (bookings: any[], rooms: MongoRoom[], top = 5) => {
+  const roomCount: Record<string, number> = {};
+  bookings.forEach(b => {
+    roomCount[b.Ma_phong] = (roomCount[b.Ma_phong] || 0) + 1;
+  });
+  const sorted = Object.entries(roomCount).sort((a, b) => b[1] - a[1]);
+  return sorted.slice(0, top).map(([maPhong, count]) => {
+    const room = rooms.find(r => r.Ma_phong === maPhong);
+    return { maPhong, soPhong: room?.So_phong, coSo: room?.Co_so, count };
+  });
+};
+
+const getRecentActivities = (bookings: any[], users: MongoUser[], limit = 10) => {
+  return bookings.slice(-limit).reverse().map(b => {
+    const user = users.find(u => u.ma_nguoi_dung === b.Ma_nguoi_dung);
+    return {
+      room: b.Ma_phong,
+      user: user?.ten_nguoi_dung || b.Ten_nguoi_dung,
+      date: b.Ngay,
+      status: b.trang_thai,
+    };
+  });
+};
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
-  const { showBoss, showError, showWarning, showSuccess } = useNotification();
   const [users, setUsers] = useState<MongoUser[]>([]);
   const [rooms, setRooms] = useState<MongoRoom[]>([]);
-  const [bookings, setBookings] = useState<MongoBookingHistory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<MongoUser | null>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Thêm/sửa người dùng
   const [showUserDialog, setShowUserDialog] = useState(false);
-  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
-  const [showAddRoomDialog, setShowAddRoomDialog] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<MongoRoom | null>(null);
-  const [showRoomDialog, setShowRoomDialog] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newUser, setNewUser] = useState({
-    ten_nguoi_dung: "",
-    email: "",
+  const [editUser, setEditUser] = useState<MongoUser | null>(null);
+  const [userForm, setUserForm] = useState<Omit<MongoUser, "_id">>({
     ma_nguoi_dung: "",
-    vai_tro: "student" as "student" | "teacher" | "admin" | "pctsv" | "security",
-    so_dien_thoai: 0,
+    ten_nguoi_dung: "",
     ngay_sinh: "",
     gioi_tinh: "Nam",
-    mat_khau: "123456"
-  });
-  const [newRoom, setNewRoom] = useState<Partial<MongoRoom>>({
-    Ma_phong: "",
-    So_phong: 0,
-    Co_so: "CS2",
-    Suc_chua: 0,
-    "Dien_tich (m2)": 0,
-    trang_thai: "available",
-    Co_so_vat_chat: "",
-    Mo_ta: "",
-    Quy_dinh: "",
+    email: "",
+    so_dien_thoai: 0,
+    mat_khau: "123456",
+    vai_tro: "student",
   });
 
-  const loadData = async () => {
-    try {
-      const [usersData, roomsData] = await Promise.all([
-        userService.getAllUsers(),
-        roomService.getAllRooms(),
-      ]);
-      setUsers(usersData);
-      setRooms(roomsData);
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-  };
+  // Báo cáo phòng bảo vệ
+  const [roomReports, setRoomReports] = useState<RoomReport[]>([]);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportForm, setReportForm] = useState<Omit<RoomReport, "id">>({
+    room: "",
+    date: "",
+    status: "Bình thường",
+    note: "",
+  });
 
   useEffect(() => {
-    loadData();
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [usersData, roomsData, bookingsData] = await Promise.all([
+          userService.getAllUsers(),
+          roomService.getAllRooms(),
+          bookingService.getAllBookings(),
+        ]);
+        setUsers(usersData);
+        setRooms(roomsData);
+        setBookings(bookingsData);
+      } catch (e) {
+        // handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
-  const getRoleName = (role?: string) => {
-    switch (role) {
-      case "student":
-        return "Sinh viên";
-      case "teacher":
-        return "Giảng viên";
-      case "admin":
-        return "Quản trị viên";
-      case "pctsv":
-        return "Phòng CTSV";
-      case "security":
-        return "Bảo vệ";
-      default:
-        return "Không xác định";
-    }
-  };
-
-  const getRoleBadgeColor = (role?: string) => {
-    switch (role) {
-      case "student":
-        return "bg-blue-100 text-blue-800";
-      case "teacher":
-        return "bg-green-100 text-green-800";
-      case "admin":
-        return "bg-purple-100 text-purple-800";
-      case "pctsv":
-        return "bg-orange-100 text-orange-800";
-      case "security":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const systemStats = {
+  // Thống kê tự động
+  const stats = {
     totalUsers: users.length,
-    activeBookings: bookings.filter((b) => b.trang_thai === "confirmed").length,
     totalRooms: rooms.length,
-    pendingApprovals: bookings.filter((b) => b.trang_thai === "pending").length,
+    totalBookings: bookings.length,
+    students: users.filter(u => u.vai_tro === "student").length,
+    teachers: users.filter(u => u.vai_tro === "teacher").length,
+    admins: users.filter(u => u.vai_tro === "admin").length,
+    pctsv: users.filter(u => u.vai_tro === "pctsv").length,
+    security: users.filter(u => u.vai_tro === "security").length,
+    confirmedBookings: bookings.filter((b: any) => b.trang_thai === "confirmed").length,
+    pendingBookings: bookings.filter((b: any) => b.trang_thai === "pending").length,
+    cancelledBookings: bookings.filter((b: any) => b.trang_thai === "cancelled").length,
   };
 
-  const handleAddUser = async () => {
-    if (!newUser.ten_nguoi_dung || !newUser.email || !newUser.ma_nguoi_dung) {
-      showWarning("Thiếu thông tin!", "Vui lòng điền đầy đủ thông tin bắt buộc!");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const createdUser = await userService.createUser(newUser);
-      setUsers([...users, createdUser]);
-      setNewUser({
-        ten_nguoi_dung: "",
-        email: "",
-        ma_nguoi_dung: "",
-        vai_tro: "student",
-        so_dien_thoai: 0,
-        ngay_sinh: "",
-        gioi_tinh: "Nam",
-        mat_khau: "123456"
-      });
-      setShowAddUserDialog(false);
-      showBoss("Thành công!", "Thêm người dùng thành công! Boss đã approve! 👑");
-    } catch (error) {
-      console.error("Error adding user:", error);
-      showError("Lỗi!", "Có lỗi xảy ra khi thêm người dùng! ❌");
-    } finally {
-      setIsSubmitting(false);
-    }
+  // Xử lý thêm/sửa/xóa người dùng
+  const openAddUser = () => {
+    setEditUser(null);
+    setUserForm({
+      ma_nguoi_dung: "",
+      ten_nguoi_dung: "",
+      ngay_sinh: "",
+      gioi_tinh: "Nam",
+      email: "",
+      so_dien_thoai: 0,
+      mat_khau: "123456",
+      vai_tro: "student",
+    });
+    setShowUserDialog(true);
   };
-
+  const openEditUser = (user: MongoUser) => {
+    setEditUser(user);
+    setUserForm({
+      ma_nguoi_dung: user.ma_nguoi_dung,
+      ten_nguoi_dung: user.ten_nguoi_dung,
+      ngay_sinh: user.ngay_sinh,
+      gioi_tinh: user.gioi_tinh,
+      email: user.email,
+      so_dien_thoai: user.so_dien_thoai,
+      mat_khau: user.mat_khau || "123456",
+      vai_tro: user.vai_tro || "student",
+    });
+    setShowUserDialog(true);
+  };
+  const handleUserFormChange = (field: keyof Omit<MongoUser, "_id">, value: any) => {
+    setUserForm(prev => ({ ...prev, [field]: value }));
+  };
+  const handleSaveUser = async () => {
+    if (editUser) {
+      // Sửa
+      await userService.updateUser(editUser._id!, userForm);
+      setUsers(users.map(u => (u._id === editUser._id ? { ...u, ...userForm } : u)));
+    } else {
+      // Thêm
+      const newUser = await userService.createUser(userForm);
+      setUsers([...users, newUser]);
+    }
+    setShowUserDialog(false);
+  };
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("🗑️ Bạn có chắc chắn muốn xóa người dùng này?")) {
-      return;
-    }
-
-    try {
-      const success = await userService.deleteUser(userId);
-      if (success) {
-        setUsers(users.filter(u => u._id !== userId));
-        showBoss("Thành công!", "Xóa người dùng thành công! Boss đã approve! 👑");
-      } else {
-        showError("Lỗi!", "Không tìm thấy người dùng để xóa!");
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      showError("Lỗi!", "Có lỗi xảy ra khi xóa người dùng! ❌");
+    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
+      await userService.deleteUser(userId);
+      setUsers(users.filter(u => u._id !== userId));
     }
   };
 
-  // Room management functions
-  const parseEquipment = (equipmentString: string): string[] => {
-    try {
-      if (equipmentString.startsWith('[') && equipmentString.endsWith(']')) {
-        return JSON.parse(equipmentString);
-      }
-      return equipmentString.split(',').map(item => item.trim());
-    } catch {
-      return equipmentString.split(',').map(item => item.trim());
-    }
+  // Xử lý báo cáo phòng bảo vệ
+  const openAddReport = () => {
+    setReportForm({ room: "", date: "", status: "Bình thường", note: "" });
+    setShowReportDialog(true);
   };
-
-  const handleAddRoom = async () => {
-    if (!newRoom.Ma_phong || !newRoom.So_phong || !newRoom.Suc_chua) {
-      showWarning("Thiếu thông tin!", "Vui lòng điền đầy đủ thông tin bắt buộc");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const roomData = {
-        ...newRoom,
-        Ma_phong: newRoom.Ma_phong,
-        So_phong: newRoom.So_phong,
-        Suc_chua: newRoom.Suc_chua,
-      } as Omit<MongoRoom, "_id">;
-      
-      await roomService.createRoom(roomData);
-      showSuccess("Thành công!", "Đã thêm phòng mới!");
-      setNewRoom({
-        Ma_phong: "",
-        So_phong: 0,
-        Co_so: "CS2",
-        "Dien_tich (m2)": 0,
-        trang_thai: "available",
-        Co_so_vat_chat: "",
-        Mo_ta: "",
-        Quy_dinh: "",
-        Suc_chua: 0,
-      });
-      setShowAddRoomDialog(false);
-      loadData();
-    } catch (error) {
-      console.error("Error adding room:", error);
-      showError("Lỗi!", "Không thể thêm phòng. Vui lòng thử lại.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleReportFormChange = (field: keyof Omit<RoomReport, "id">, value: any) => {
+    setReportForm(prev => ({ ...prev, [field]: value }));
   };
-
-  const handleDeleteRoom = async (roomId: string) => {
-    if (!confirm("🗑️ Bạn có chắc chắn muốn xóa phòng này?")) {
-      return;
-    }
-
-    try {
-      const success = await roomService.deleteRoom(roomId);
-      if (success) {
-        setRooms(rooms.filter(r => r._id !== roomId));
-        showBoss("Thành công!", "Xóa phòng thành công! Boss đã approve! 👑");
-      } else {
-        showError("Lỗi!", "Không tìm thấy phòng để xóa!");
-      }
-    } catch (error) {
-      console.error("Error deleting room:", error);
-      showError("Lỗi!", "Có lỗi xảy ra khi xóa phòng! ❌");
-    }
+  const handleSaveReport = () => {
+    setRoomReports([
+      ...roomReports,
+      { id: `report_${Date.now()}`, ...reportForm },
+    ]);
+    setShowReportDialog(false);
   };
-
-  const handleEditRoom = (room: MongoRoom) => {
-    setSelectedRoom(room);
-    setShowRoomDialog(true);
-  };
-
-  const handleSaveRoomEdit = async () => {
-    if (!selectedRoom) return;
-
-    setIsSubmitting(true);
-    try {
-      const success = await roomService.updateRoom(selectedRoom.Ma_phong, selectedRoom);
-      if (success) {
-        setRooms(rooms.map(r => r._id === selectedRoom._id ? selectedRoom : r));
-        setShowRoomDialog(false);
-        setSelectedRoom(null);
-        showBoss("Thành công!", "Cập nhật phòng thành công! Boss đã approve! 👑");
-      } else {
-        showError("Lỗi!", "Không thể cập nhật phòng!");
-      }
-    } catch (error) {
-      console.error("Error updating room:", error);
-      showError("Lỗi!", "Có lỗi xảy ra khi cập nhật phòng! ❌");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <Loader2 className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto" />
-            <p className="mt-4 text-gray-600">Đang tải dữ liệu quản trị...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-purple-100 rounded-full">
-                  <Shield className="h-6 w-6 text-purple-600" />
-                </div>
-                <div className="text-left">
-                  <div className="text-lg font-bold text-gray-900">
-                    Admin Dashboard
-                  </div>
-                  <div className="text-xs text-gray-500">Quản trị hệ thống</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="text-sm text-gray-600">
-                Xin chào, {user?.name}
-              </div>
-              <Button variant="outline" size="sm" onClick={logout}>
-                Đăng xuất
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link
-            to="/"
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Quay về trang chủ
-          </Link>
-        </div>
-
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Bảng điều khiển Admin
-          </h1>
-          <p className="text-gray-600">
-            Quản lý người dùng, phòng học và thống kê hệ thống
-          </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <span className="text-sm font-medium">Tổng người dùng</span>
-                <Users className="h-4 w-4 text-purple-600" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{systemStats.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">
-                {users.filter((u) => u.vai_tro === "student").length} sinh viên,{" "}
-                {users.filter((u) => u.vai_tro === "teacher").length} giảng viên
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <span className="text-sm font-medium">Đặt phòng active</span>
-                <Calendar className="h-4 w-4 text-green-600" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {systemStats.activeBookings}
-              </div>
-              <p className="text-xs text-muted-foreground">Đã xác nhận</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <span className="text-sm font-medium">Tổng phòng</span>
-                <Building2 className="h-4 w-4 text-blue-600" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{systemStats.totalRooms}</div>
-              <p className="text-xs text-muted-foreground">
-                {rooms.filter((r) => r.trang_thai === "available").length} có
-                sẵn
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between">
-                <span className="text-sm font-medium">Chờ duyệt</span>
-                <BarChart3 className="h-4 w-4 text-orange-600" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {systemStats.pendingApprovals}
-              </div>
-              <p className="text-xs text-muted-foreground">Yêu cầu đặt phòng</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="users">Quản lý người dùng</TabsTrigger>
-            <TabsTrigger value="rooms">Quản lý phòng</TabsTrigger>
-            <TabsTrigger value="system">Cài đặt hệ thống</TabsTrigger>
-            <TabsTrigger value="statistics">Thống kê</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Quản lý người dùng</CardTitle>
-                    <CardDescription>
-                      Xem và quản lý tất cả người dùng trong hệ thống
-                    </CardDescription>
-                  </div>
-                  <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
-                    <DialogTrigger asChild>
-                      <Button onClick={() => setShowAddUserDialog(true)}>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Thêm người dùng
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Thêm người dùng mới</DialogTitle>
-                        <DialogDescription>
-                          Nhập thông tin người dùng mới
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="user-name">Họ và tên *</Label>
-                            <Input 
-                              id="user-name" 
-                              placeholder="Nguyễn Văn A"
-                              value={newUser.ten_nguoi_dung}
-                              onChange={(e) => setNewUser({...newUser, ten_nguoi_dung: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="user-email">Email *</Label>
-                            <Input
-                              id="user-email"
-                              placeholder="user@st.cmc.edu.vn"
-                              value={newUser.email}
-                              onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="user-id">Mã người dùng *</Label>
-                            <Input
-                              id="user-id"
-                              placeholder="BIT230001"
-                              value={newUser.ma_nguoi_dung}
-                              onChange={(e) => setNewUser({...newUser, ma_nguoi_dung: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="user-role">Vai trò</Label>
-                            <select 
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                              value={newUser.vai_tro}
-                              onChange={(e) => setNewUser({...newUser, vai_tro: e.target.value as any})}
-                            >
-                              <option value="student">Sinh viên</option>
-                              <option value="teacher">Giảng viên</option>
-                              <option value="admin">Quản trị viên</option>
-                              <option value="pctsv">PCTSV</option>
-                              <option value="security">Bảo vệ</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="user-phone">Số điện thoại</Label>
-                            <Input 
-                              id="user-phone" 
-                              placeholder="0123456789"
-                              type="number"
-                              value={newUser.so_dien_thoai || ""}
-                              onChange={(e) => setNewUser({...newUser, so_dien_thoai: parseInt(e.target.value) || 0})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="user-birth">Ngày sinh</Label>
-                            <Input 
-                              id="user-birth" 
-                              type="date"
-                              value={newUser.ngay_sinh}
-                              onChange={(e) => setNewUser({...newUser, ngay_sinh: e.target.value})}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="user-gender">Giới tính</Label>
-                          <select 
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            value={newUser.gioi_tinh}
-                            onChange={(e) => setNewUser({...newUser, gioi_tinh: e.target.value})}
-                          >
-                            <option value="Nam">Nam</option>
-                            <option value="Nữ">Nữ</option>
-                          </select>
-                        </div>
-                        <Button 
-                          className="w-full" 
-                          onClick={handleAddUser}
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? "Đang tạo..." : "Tạo người dùng"}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+        <Link to="/">
+          <Button variant="outline">Quay về trang chủ</Button>
+        </Link>
+      </div>
+      {/* Thống kê */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Card className="rounded-xl shadow-sm bg-gradient-to-br from-blue-50 to-blue-100">
+          <CardHeader><CardTitle>Người dùng</CardTitle></CardHeader>
+          <CardContent><span className="text-3xl font-bold text-blue-700">{stats.totalUsers}</span></CardContent>
+        </Card>
+        <Card className="rounded-xl shadow-sm bg-gradient-to-br from-green-50 to-green-100">
+          <CardHeader><CardTitle>Phòng</CardTitle></CardHeader>
+          <CardContent><span className="text-3xl font-bold text-green-700">{stats.totalRooms}</span></CardContent>
+        </Card>
+        <Card className="rounded-xl shadow-sm bg-gradient-to-br from-yellow-50 to-yellow-100">
+          <CardHeader><CardTitle>Lượt đặt</CardTitle></CardHeader>
+          <CardContent><span className="text-3xl font-bold text-yellow-700">{stats.totalBookings}</span></CardContent>
+        </Card>
+        <Card className="rounded-xl shadow-sm bg-gradient-to-br from-purple-50 to-purple-100">
+          <CardHeader><CardTitle>Đặt thành công</CardTitle></CardHeader>
+          <CardContent><span className="text-3xl font-bold text-purple-700">{stats.confirmedBookings}</span></CardContent>
+        </Card>
+      </div>
+      <Tabs defaultValue="report" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="report">Báo cáo tổng</TabsTrigger>
+          <TabsTrigger value="users">Người dùng</TabsTrigger>
+          <TabsTrigger value="rooms">Phòng</TabsTrigger>
+        </TabsList>
+        {/* Tab Báo cáo tổng */}
+        <TabsContent value="report">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Biểu đồ tròn phân loại vai trò người dùng */}
+            <Card className="rounded-xl shadow-sm">
+              <CardHeader className="flex flex-row items-center gap-2">
+                <PieChart className="w-5 h-5 text-blue-500" />
+                <CardTitle>Phân loại vai trò người dùng</CardTitle>
               </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center">
+                  <div style={{ width: 120, height: 120, position: 'relative' }}>
+                    <svg width="120" height="120" viewBox="0 0 32 32">
+                      {(() => {
+                        const roles = [
+                          { label: 'Sinh viên', value: stats.students, color: '#3b82f6' },
+                          { label: 'Giảng viên', value: stats.teachers, color: '#22c55e' },
+                          { label: 'Admin', value: stats.admins, color: '#a21caf' },
+                          { label: 'CTSV', value: stats.pctsv, color: '#f59e42' },
+                          { label: 'Bảo vệ', value: stats.security, color: '#64748b' },
+                        ];
+                        const total = roles.reduce((sum, r) => sum + r.value, 0) || 1;
+                        let acc = 0;
+                        return roles.map((r, i) => {
+                          const start = acc / total * 100;
+                          acc += r.value;
+                          const end = acc / total * 100;
+                          const large = end - start > 50 ? 1 : 0;
+                          const a = (start / 100) * 2 * Math.PI;
+                          const b = (end / 100) * 2 * Math.PI;
+                          const x1 = 16 + 16 * Math.sin(a);
+                          const y1 = 16 - 16 * Math.cos(a);
+                          const x2 = 16 + 16 * Math.sin(b);
+                          const y2 = 16 - 16 * Math.cos(b);
+                          return (
+                            <path
+                              key={r.label}
+                              d={`M16,16 L${x1},${y1} A16,16 0 ${large} 1 ${x2},${y2} Z`}
+                              fill={r.color}
+                            />
+                          );
+                        });
+                      })()}
+                    </svg>
+                  </div>
+                  <div className="ml-4 space-y-1 text-sm">
+                    <div><span className="inline-block w-3 h-3 rounded-full mr-1" style={{background:'#3b82f6'}} />Sinh viên: {stats.students}</div>
+                    <div><span className="inline-block w-3 h-3 rounded-full mr-1" style={{background:'#22c55e'}} />Giảng viên: {stats.teachers}</div>
+                    <div><span className="inline-block w-3 h-3 rounded-full mr-1" style={{background:'#a21caf'}} />Admin: {stats.admins}</div>
+                    <div><span className="inline-block w-3 h-3 rounded-full mr-1" style={{background:'#f59e42'}} />CTSV: {stats.pctsv}</div>
+                    <div><span className="inline-block w-3 h-3 rounded-full mr-1" style={{background:'#64748b'}} />Bảo vệ: {stats.security}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            {/* Biểu đồ cột số lượt đặt theo trạng thái */}
+            <Card className="rounded-xl shadow-sm">
+              <CardHeader className="flex flex-row items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-green-500" />
+                <CardTitle>Trạng thái đặt phòng</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end gap-4 h-32 mt-4">
+                  {[
+                    { label: 'Đã duyệt', value: stats.confirmedBookings, color: '#22c55e' },
+                    { label: 'Chờ duyệt', value: stats.pendingBookings, color: '#f59e42' },
+                    { label: 'Đã hủy', value: stats.cancelledBookings, color: '#ef4444' },
+                  ].map((s) => (
+                    <div key={s.label} className="flex flex-col items-center">
+                      <div style={{height: `${(s.value / (stats.totalBookings||1)) * 100}px`, width: 24, background: s.color, borderRadius: 4}}></div>
+                      <span className="text-xs mt-1">{s.label}</span>
+                      <span className="text-xs font-bold">{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="rounded-xl shadow-sm">
+              <CardHeader><CardTitle>Top phòng được đặt nhiều nhất</CardTitle></CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Tên</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Vai trò</TableHead>
-                      <TableHead>Mã</TableHead>
-                      <TableHead>Điện thoại</TableHead>
-                      <TableHead>Hành động</TableHead>
+                      <TableHead>Phòng</TableHead>
+                      <TableHead>Cơ sở</TableHead>
+                      <TableHead>Số lượt đặt</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((userData) => (
-                      <TableRow key={userData._id}>
-                        <TableCell className="font-medium">
-                          {userData.ten_nguoi_dung}
-                        </TableCell>
-                        <TableCell>{userData.email}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={getRoleBadgeColor(userData.vai_tro)}
-                          >
-                            {getRoleName(userData.vai_tro)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{userData.ma_nguoi_dung}</TableCell>
-                        <TableCell>{userData.so_dien_thoai}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedUser(userData);
-                                setShowUserDialog(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleDeleteUser(userData._id || "")}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                    {getTopRooms(bookings, rooms).map(r => (
+                      <TableRow key={r.maPhong} className="hover:bg-blue-50 transition">
+                        <TableCell>{r.maPhong}</TableCell>
+                        <TableCell>{r.coSo}</TableCell>
+                        <TableCell>{r.count}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="rooms">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Quản lý phòng học</CardTitle>
-                    <CardDescription>
-                      Xem và quản lý thông tin phòng học trong hệ thống
-                    </CardDescription>
-                  </div>
-                  <Dialog open={showAddRoomDialog} onOpenChange={setShowAddRoomDialog}>
-                    <DialogTrigger asChild>
-                      <Button onClick={() => setShowAddRoomDialog(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Thêm phòng
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Thêm phòng mới</DialogTitle>
-                        <DialogDescription>
-                          Nhập thông tin phòng học mới
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="room-id">Mã phòng *</Label>
-                            <Input
-                              id="room-id"
-                              placeholder="CS2_101"
-                              value={newRoom.Ma_phong}
-                              onChange={(e) => setNewRoom({...newRoom, Ma_phong: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="room-number">Số phòng *</Label>
-                            <Input
-                              id="room-number"
-                              placeholder="101"
-                              type="number"
-                              value={newRoom.So_phong || ""}
-                              onChange={(e) => setNewRoom({...newRoom, So_phong: parseInt(e.target.value) || 0})}
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="building">Tòa nhà</Label>
-                            <select 
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                              value={newRoom.Co_so}
-                              onChange={(e) => setNewRoom({...newRoom, Co_so: e.target.value})}
-                            >
-                              <option value="CS2">Tòa CS2</option>
-                            </select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="capacity">Sức chứa *</Label>
-                            <Input
-                              id="capacity"
-                              type="number"
-                              placeholder="50"
-                              value={newRoom.Suc_chua || ""}
-                              onChange={(e) => setNewRoom({...newRoom, Suc_chua: parseInt(e.target.value) || 0})}
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="area">Diện tích (m²)</Label>
-                            <Input 
-                              id="area" 
-                              type="number" 
-                              placeholder="45"
-                              value={newRoom["Dien_tich (m2)"] || ""}
-                              onChange={(e) => setNewRoom({...newRoom, "Dien_tich (m2)": parseInt(e.target.value) || 0})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="status">Trạng thái</Label>
-                            <select 
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                              value={newRoom.trang_thai}
-                              onChange={(e) => setNewRoom({...newRoom, trang_thai: e.target.value as any})}
-                            >
-                              <option value="available">Có sẵn</option>
-                              <option value="maintenance">Bảo trì</option>
-                              <option value="booked">Đã đặt</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="equipment">Trang thiết bị</Label>
-                          <Textarea
-                            id="equipment"
-                            placeholder="Máy chiếu, Wifi, Điều hòa..."
-                            rows={3}
-                            value={newRoom.Co_so_vat_chat}
-                            onChange={(e) => setNewRoom({...newRoom, Co_so_vat_chat: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="description">Mô tả</Label>
-                          <Textarea
-                            id="description"
-                            placeholder="Mô tả chi tiết về phòng học..."
-                            rows={2}
-                            value={newRoom.Mo_ta}
-                            onChange={(e) => setNewRoom({...newRoom, Mo_ta: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="rules">Quy định</Label>
-                          <Textarea
-                            id="rules"
-                            placeholder="Quy định sử dụng phòng..."
-                            rows={2}
-                            value={newRoom.Quy_dinh}
-                            onChange={(e) => setNewRoom({...newRoom, Quy_dinh: e.target.value})}
-                          />
-                        </div>
-                        <Button 
-                          className="w-full" 
-                          onClick={handleAddRoom}
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? "Đang thêm..." : "Thêm phòng"}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
+            <Card className="rounded-xl shadow-sm">
+              <CardHeader><CardTitle>Hoạt động gần đây</CardTitle></CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Người dùng</TableHead>
                       <TableHead>Phòng</TableHead>
-                      <TableHead>Tòa nhà</TableHead>
-                      <TableHead>Diện tích</TableHead>
-                      <TableHead>Sức chứa</TableHead>
-                      <TableHead>Trang thiết bị</TableHead>
+                      <TableHead>Ngày</TableHead>
                       <TableHead>Trạng thái</TableHead>
-                      <TableHead>Hành động</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rooms.map((room) => {
-                      const equipment = parseEquipment(room.Co_so_vat_chat);
-                      return (
-                        <TableRow key={room._id}>
-                          <TableCell className="font-medium">
-                            Phòng {room.So_phong}
-                          </TableCell>
-                          <TableCell>Tòa {room.Co_so}</TableCell>
-                          <TableCell>{room["Dien_tich (m2)"]}m²</TableCell>
-                          <TableCell>{room.Suc_chua} người</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {equipment.slice(0, 2).map((item, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {item}
-                                </Badge>
-                              ))}
-                              {equipment.length > 2 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  +{equipment.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              className={
-                                room.trang_thai === "available"
-                                  ? "bg-green-100 text-green-800"
-                                  : room.trang_thai === "maintenance"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {room.trang_thai === "available"
-                                ? "Có sẵn"
-                                : room.trang_thai === "maintenance"
-                                  ? "Bảo trì"
-                                  : "Đã đặt"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditRoom(room)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleDeleteRoom(room._id || "")}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {getRecentActivities(bookings, users).map((a, i) => (
+                      <TableRow key={i} className="hover:bg-green-50 transition">
+                        <TableCell>{a.user}</TableCell>
+                        <TableCell>{a.room}</TableCell>
+                        <TableCell>{a.date}</TableCell>
+                        <TableCell>{a.status}</TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
-
-            {/* Edit Room Dialog */}
-            <Dialog open={showRoomDialog} onOpenChange={setShowRoomDialog}>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Chỉnh sửa phòng</DialogTitle>
-                  <DialogDescription>
-                    Cập nhật thông tin phòng học
-                  </DialogDescription>
-                </DialogHeader>
-                {selectedRoom && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-room-id">Mã phòng</Label>
-                        <Input
-                          id="edit-room-id"
-                          value={selectedRoom.Ma_phong}
-                          onChange={(e) => setSelectedRoom({...selectedRoom, Ma_phong: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-room-number">Số phòng</Label>
-                        <Input
-                          id="edit-room-number"
-                          type="number"
-                          value={selectedRoom.So_phong || ""}
-                          onChange={(e) => setSelectedRoom({...selectedRoom, So_phong: parseInt(e.target.value) || 0})}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-building">Tòa nhà</Label>
-                        <select 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          value={selectedRoom.Co_so}
-                          onChange={(e) => setSelectedRoom({...selectedRoom, Co_so: e.target.value})}
-                        >
-                          <option value="CS2">Tòa CS2</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-capacity">Sức chứa</Label>
-                        <Input
-                          id="edit-capacity"
-                          type="number"
-                          value={selectedRoom.Suc_chua || ""}
-                          onChange={(e) => setSelectedRoom({...selectedRoom, Suc_chua: parseInt(e.target.value) || 0})}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-area">Diện tích (m²)</Label>
-                        <Input 
-                          id="edit-area" 
-                          type="number" 
-                          value={selectedRoom["Dien_tich (m2)"] || ""}
-                          onChange={(e) => setSelectedRoom({...selectedRoom, "Dien_tich (m2)": parseInt(e.target.value) || 0})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-status">Trạng thái</Label>
-                        <select 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          value={selectedRoom.trang_thai}
-                          onChange={(e) => setSelectedRoom({...selectedRoom, trang_thai: e.target.value as any})}
-                        >
-                          <option value="available">Có sẵn</option>
-                          <option value="maintenance">Bảo trì</option>
-                          <option value="booked">Đã đặt</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-equipment">Trang thiết bị</Label>
-                      <Textarea
-                        id="edit-equipment"
-                        rows={3}
-                        value={selectedRoom.Co_so_vat_chat}
-                        onChange={(e) => setSelectedRoom({...selectedRoom, Co_so_vat_chat: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-description">Mô tả</Label>
-                      <Textarea
-                        id="edit-description"
-                        rows={2}
-                        value={selectedRoom.Mo_ta}
-                        onChange={(e) => setSelectedRoom({...selectedRoom, Mo_ta: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-rules">Quy định</Label>
-                      <Textarea
-                        id="edit-rules"
-                        rows={2}
-                        value={selectedRoom.Quy_dinh}
-                        onChange={(e) => setSelectedRoom({...selectedRoom, Quy_dinh: e.target.value})}
-                      />
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        className="flex-1" 
-                        onClick={handleSaveRoomEdit}
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={() => setShowRoomDialog(false)}
-                      >
-                        Hủy
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
-          </TabsContent>
-
-          <TabsContent value="system">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Settings className="h-5 w-5 mr-2" />
-                    Cài đặt email
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <EmailTestDialog />
-                    <div className="text-sm text-gray-600">
-                      Kiểm tra và cấu hình hệ thống email tự động
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Cài đặt hệ thống</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Tự động duyệt đặt phòng</span>
-                      <Badge className="bg-green-100 text-green-800">Bật</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Gửi email thông báo</span>
-                      <Badge className="bg-green-100 text-green-800">Bật</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Backup tự động</span>
-                      <Badge className="bg-blue-100 text-blue-800">
-                        Hàng ngày
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="statistics">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Thống kê người dùng theo vai trò</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {["student", "teacher", "admin", "pctsv", "security"].map(
-                      (role) => {
-                        const count = users.filter(
-                          (u) => u.vai_tro === role,
-                        ).length;
-                        const percentage =
-                          users.length > 0 ? (count / users.length) * 100 : 0;
-
-                        return (
-                          <div
-                            key={role}
-                            className="flex justify-between items-center"
-                          >
-                            <span className="text-sm">{getRoleName(role)}</span>
-                            <div className="flex items-center space-x-2">
-                              <div className="w-32 bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-purple-600 h-2 rounded-full"
-                                  style={{ width: `${percentage}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-sm text-gray-600 w-12">
-                                {count}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      },
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Thống kê đặt phòng</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-blue-600">
-                        {bookings.length}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Tổng số đặt phòng
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <div className="text-xl font-semibold text-green-600">
-                          {
-                            bookings.filter((b) => b.trang_thai === "confirmed")
-                              .length
-                          }
-                        </div>
-                        <div className="text-xs text-gray-600">Đã duyệt</div>
-                      </div>
-                      <div>
-                        <div className="text-xl font-semibold text-yellow-600">
-                          {
-                            bookings.filter((b) => b.trang_thai === "pending")
-                              .length
-                          }
-                        </div>
-                        <div className="text-xs text-gray-600">Chờ duyệt</div>
-                      </div>
-                      <div>
-                        <div className="text-xl font-semibold text-red-600">
-                          {
-                            bookings.filter((b) => b.trang_thai === "cancelled")
-                              .length
-                          }
-                        </div>
-                        <div className="text-xs text-gray-600">Đã hủy</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* User Edit Dialog */}
+          </div>
+        </TabsContent>
+        {/* Tab Người dùng */}
+        <TabsContent value="users">
+          <div className="mb-2 flex justify-end">
+            <Button onClick={openAddUser}>Thêm người dùng</Button>
+          </div>
+          <Table className="rounded-xl overflow-hidden">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tên</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Vai trò</TableHead>
+                <TableHead>Hành động</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((u) => (
+                <TableRow key={u._id} className="hover:bg-gray-50 transition">
+                  <TableCell>{u.ten_nguoi_dung}</TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell>{u.vai_tro}</TableCell>
+                  <TableCell>
+                    <Button size="sm" variant="outline" onClick={() => openEditUser(u)}>Sửa</Button>{' '}
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(u._id!)}>Xóa</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TabsContent>
+        {/* Tab Phòng */}
+        <TabsContent value="rooms">
+          <Table className="rounded-xl overflow-hidden">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mã phòng</TableHead>
+                <TableHead>Số phòng</TableHead>
+                <TableHead>Cơ sở</TableHead>
+                <TableHead>Sức chứa</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rooms.map((r) => (
+                <TableRow key={r._id} className="hover:bg-gray-50 transition">
+                  <TableCell>{r.Ma_phong}</TableCell>
+                  <TableCell>{r.So_phong}</TableCell>
+                  <TableCell>{r.Co_so}</TableCell>
+                  <TableCell>{r.Suc_chua}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TabsContent>
+      </Tabs>
+      {/* Dialog Thêm/Sửa người dùng */}
       <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Chỉnh sửa người dùng</DialogTitle>
-            <DialogDescription>Cập nhật thông tin người dùng</DialogDescription>
+            <DialogTitle>{editUser ? "Sửa người dùng" : "Thêm người dùng"}</DialogTitle>
           </DialogHeader>
-          {selectedUser && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-name">Họ và tên</Label>
-                  <Input
-                    id="edit-name"
-                    defaultValue={selectedUser.ten_nguoi_dung}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-email">Email</Label>
-                  <Input id="edit-email" defaultValue={selectedUser.email} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-role">Vai trò</Label>
-                  <select
-                    id="edit-role"
-                    defaultValue={selectedUser.vai_tro}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="student">Sinh viên</option>
-                    <option value="teacher">Giảng viên</option>
-                    <option value="admin">Quản trị viên</option>
-                    <option value="pctsv">PCTSV</option>
-                    <option value="security">Bảo vệ</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-phone">Số điện thoại</Label>
-                  <Input
-                    id="edit-phone"
-                    defaultValue={selectedUser.so_dien_thoai}
-                  />
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <Button className="flex-1">Lưu thay đổi</Button>
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowUserDialog(false)}
-                >
-                  Hủy
-                </Button>
-              </div>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Input placeholder="Mã người dùng" value={userForm.ma_nguoi_dung} onChange={e => handleUserFormChange("ma_nguoi_dung", e.target.value)} />
+            <Input placeholder="Tên người dùng" value={userForm.ten_nguoi_dung} onChange={e => handleUserFormChange("ten_nguoi_dung", e.target.value)} />
+            <Input placeholder="Ngày sinh" value={userForm.ngay_sinh} onChange={e => handleUserFormChange("ngay_sinh", e.target.value)} />
+            <Input placeholder="Giới tính" value={userForm.gioi_tinh} onChange={e => handleUserFormChange("gioi_tinh", e.target.value)} />
+            <Input placeholder="Email" value={userForm.email} onChange={e => handleUserFormChange("email", e.target.value)} />
+            <Input placeholder="Số điện thoại" type="number" value={userForm.so_dien_thoai} onChange={e => handleUserFormChange("so_dien_thoai", Number(e.target.value))} />
+            <Input placeholder="Mật khẩu" value={userForm.mat_khau} onChange={e => handleUserFormChange("mat_khau", e.target.value)} />
+            <Input placeholder="Vai trò" value={userForm.vai_tro} onChange={e => handleUserFormChange("vai_tro", e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveUser}>{editUser ? "Lưu" : "Thêm"}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+      {loading && <div className="mt-4 text-center">Đang tải dữ liệu...</div>}
     </div>
   );
 };
 
-export default AdminDashboard;
+export default AdminDashboard; 
