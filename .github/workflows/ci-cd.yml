@@ -27,7 +27,7 @@ jobs:
         run: npm run build # điều chỉnh lại nếu bạn chia riêng FE/BE
 
       - name: Build backend
-        run: npm run build:be # nếu bạn có script riêng cho backend
+        run: npm run build # nếu bạn có script riêng cho backend
 
       # (Tùy chọn) Test
       - name: Run tests
