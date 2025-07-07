@@ -3,10 +3,10 @@ name: CI/CD Pipeline for MuonPhongCMC
 on:
   push:
     branches:
-      - main
+      - v6
   pull_request:
     branches:
-      - main
+      - v6
 
 jobs:
   build-and-test:
