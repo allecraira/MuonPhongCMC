@@ -23,19 +23,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build frontend
-        run: npm run build # điều chỉnh lại nếu bạn chia riêng FE/BE
+      - name: Build ứng dụng
+        run: npm run build
 
-      - name: Build backend
-        run: npm run build # nếu bạn có script riêng cho backend
-
-      # (Tùy chọn) Test
       - name: Run tests
         run: npm test
 
-      # Build Docker image cho backend
       - name: Build Docker image (backend)
-        run: docker build -f Dockerfile.be -t muonphongcmc-be .
+        run: docker build -t muonphongcmc-be .
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
