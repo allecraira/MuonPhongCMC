@@ -42,17 +42,3 @@ jobs:
         run: |
           docker tag muonphongcmc-be ${{ secrets.DOCKER_USERNAME }}/muonphongcmc-be:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/muonphongcmc-be:latest
-
-  deploy-vercel:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
