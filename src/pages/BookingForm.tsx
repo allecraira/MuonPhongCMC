@@ -41,6 +41,7 @@ import {
   Mail,
   Phone,
   BookOpen,
+  AlertCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
@@ -185,6 +186,13 @@ const BookingForm = () => {
     e.preventDefault();
     if (!user || !selectedDate || !formData.selectedTime) {
       showWarning("Thiếu thông tin!", "Vui lòng điền đầy đủ thông tin bắt buộc");
+      return;
+    }
+
+    // Kiểm tra số người không vượt quá sức chứa
+    const maxCapacity = room.Suc_chua || room.capacity || 100;
+    if (formData.attendees > maxCapacity) {
+      showError("Vượt quá sức chứa!", `Phòng chỉ có thể chứa tối đa ${maxCapacity} người. Vui lòng giảm số người hoặc chọn phòng khác.`);
       return;
     }
 
@@ -422,12 +430,42 @@ const BookingForm = () => {
 
                   <div className="space-y-2">
                     <Label>Số người tham gia *</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={formData.attendees}
-                      onChange={(e) => handleInputChange("attendees", parseInt(e.target.value) || 1)}
-                    />
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={room.Suc_chua || room.capacity || 100}
+                        value={formData.attendees}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 1;
+                          const maxCapacity = room.Suc_chua || room.capacity || 100;
+                          if (value > maxCapacity) {
+                            showWarning("Vượt quá sức chứa!", `Phòng chỉ có thể chứa tối đa ${maxCapacity} người`);
+                            return;
+                          }
+                          handleInputChange("attendees", value);
+                        }}
+                        className={formData.attendees > (room.Suc_chua || room.capacity || 100) ? "border-red-500" : ""}
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">
+                        / {room.Suc_chua || room.capacity || 100}
+                      </div>
+                    </div>
+                    {formData.attendees > (room.Suc_chua || room.capacity || 100) && (
+                      <div className="text-red-600 text-sm flex items-center mt-1">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Số người vượt quá sức chứa của phòng ({room.Suc_chua || room.capacity || 100} người)
+                      </div>
+                    )}
+                    <div className="text-sm text-gray-600">
+                      Sức chứa tối đa: {room.Suc_chua || room.capacity || 100} người
+                    </div>
+                    {formData.attendees >= (room.Suc_chua || room.capacity || 100) * 0.8 && formData.attendees <= (room.Suc_chua || room.capacity || 100) && (
+                      <div className="text-amber-600 text-sm flex items-center mt-1">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Số người đã đạt 80% sức chứa của phòng
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -485,7 +523,7 @@ const BookingForm = () => {
                   type="submit"
                   className="flex-1 bg-cmcBlue-600 hover:bg-cmcBlue-700"
                   size="lg"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || formData.attendees > (room.Suc_chua || room.capacity || 100)}
                 >
                   {isSubmitting ? "Đang xử lý..." : "Xác nhận đặt phòng"}
                 </Button>
