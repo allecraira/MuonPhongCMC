@@ -30,6 +30,8 @@ import {
   Coffee,
   Building2,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,6 +46,10 @@ const RoomSearch = () => {
     building: "all",
     capacity: "all",
   });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Debounced search function
   const debouncedSearch = useCallback(
@@ -98,6 +104,7 @@ const RoomSearch = () => {
   // Trigger search when filters change
   useEffect(() => {
     debouncedSearch(searchFilters);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [searchFilters, debouncedSearch]);
 
   const handleFilterChange = (field: string, value: string) => {
@@ -110,6 +117,7 @@ const RoomSearch = () => {
       building: "all",
       capacity: "all",
     });
+    setCurrentPage(1); // Reset to first page when clearing filters
   };
 
   const getStatusBadge = (status?: string) => {
@@ -150,6 +158,18 @@ const RoomSearch = () => {
         .split(",")
         .map((item) => item.trim().replace(/[\[\]']/g, ""));
     }
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentRooms = filteredRooms.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when changing page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -315,7 +335,7 @@ const RoomSearch = () => {
               </Button>
             </div>
           ) : (
-            filteredRooms.map((room) => {
+            currentRooms.map((room) => {
               const equipment = parseEquipment(room.Co_so_vat_chat);
 
               return (
@@ -410,13 +430,76 @@ const RoomSearch = () => {
         </div>
 
         {!isLoading && filteredRooms.length > 0 && (
-          <div className="mt-10 text-center text-gray-600 text-lg">
-            <p>
-              Hiển thị{" "}
-              <span className="font-semibold">{filteredRooms.length}</span> phòng
-              trong tổng số{" "}
-              <span className="font-semibold">{allRooms.length}</span> phòng
-            </p>
+          <div className="mt-10 space-y-6">
+            {/* Pagination Info */}
+            <div className="text-center text-gray-600 text-lg">
+              <p>
+                Hiển thị{" "}
+                <span className="font-semibold">{startIndex + 1}</span> đến{" "}
+                <span className="font-semibold">{Math.min(endIndex, filteredRooms.length)}</span> 
+                trong tổng số{" "}
+                <span className="font-semibold">{filteredRooms.length}</span> phòng
+              </p>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center space-x-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>Trước</span>
+                </Button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first page, last page, current page, and pages around current
+                    const shouldShow = 
+                      page === 1 || 
+                      page === totalPages || 
+                      Math.abs(page - currentPage) <= 1;
+                    
+                    if (shouldShow) {
+                      return (
+                        <Button
+                          key={page}
+                          variant={page === currentPage ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className="w-10 h-10"
+                        >
+                          {page}
+                        </Button>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <span key={page} className="px-2 text-gray-500">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center space-x-1"
+                >
+                  <span>Sau</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

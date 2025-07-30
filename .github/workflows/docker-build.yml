@@ -43,6 +43,10 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
+          labels: |
+            org.opencontainers.image.title=CMC Booking Room
+            org.opencontainers.image.description=Room booking system for CMC
+            org.opencontainers.image.vendor=CMC
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

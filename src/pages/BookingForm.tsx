@@ -438,11 +438,6 @@ const BookingForm = () => {
                         value={formData.attendees}
                         onChange={(e) => {
                           const value = parseInt(e.target.value) || 1;
-                          const maxCapacity = room.Suc_chua || room.capacity || 100;
-                          if (value > maxCapacity) {
-                            showWarning("Vượt quá sức chứa!", `Phòng chỉ có thể chứa tối đa ${maxCapacity} người`);
-                            return;
-                          }
                           handleInputChange("attendees", value);
                         }}
                         className={formData.attendees > (room.Suc_chua || room.capacity || 100) ? "border-red-500" : ""}
