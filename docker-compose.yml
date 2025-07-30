@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  cmc-booking-room:
+    build: .
+    ports:
+      - "3000:80"
+    container_name: cmc-booking-room-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
