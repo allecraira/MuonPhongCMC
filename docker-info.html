@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMC Booking Room - Docker Info</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .success {
+            background: #4CAF50;
+            color: white;
+        }
+        .failed {
+            background: #f44336;
+            color: white;
+        }
+        .command {
+            background: #333;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .link {
+            color: #87CEEB;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+        .steps {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        .step-number {
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐳 Docker Image Status</h1>
+        
+        <div class="info-card">
+            <h2>📦 Image Information</h2>
+            <p><strong>Repository:</strong> ghcr.io/hoangkans/cmc-bookinh-room-v6</p>
+            <p><strong>Tag:</strong> latest</p>
+            <p><strong>Status:</strong> <span class="status success">✅ Available</span></p>
+            <p><strong>Last Build:</strong> Build #6 (Successful)</p>
+        </div>
+
+        <div class="info-card">
+            <h2>🔗 Quick Links</h2>
+            <p><a href="https://github.com/Hoangkans/cmc-bookinh-room-v6/packages" class="link" target="_blank">📦 View on GitHub Packages</a></p>
+            <p><a href="https://github.com/Hoangkans/cmc-bookinh-room-v6/actions" class="link" target="_blank">⚡ View GitHub Actions</a></p>
+            <p><a href="https://github.com/Hoangkans/cmc-bookinh-room-v6" class="link" target="_blank">📁 View Source Code</a></p>
+        </div>
+
+        <div class="steps">
+            <h2>🚀 How to Use</h2>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Install Docker Desktop</strong>
+                <p>Download from: <a href="https://www.docker.com/products/docker-desktop" class="link" target="_blank">docker.com</a></p>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Pull the Image</strong>
+                <div class="command">docker pull ghcr.io/hoangkans/cmc-bookinh-room-v6:latest</div>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Run the Container</strong>
+                <div class="command">docker run -p 3000:80 ghcr.io/hoangkans/cmc-bookinh-room-v6:latest</div>
+            </div>
+            
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Access the App</strong>
+                <p>Open browser: <a href="http://localhost:3000" class="link" target="_blank">http://localhost:3000</a></p>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <h2>📋 Build Details</h2>
+            <p><strong>Base Image:</strong> node:18-alpine (build) + nginx:alpine (production)</p>
+            <p><strong>Build Time:</strong> ~1m 33s</p>
+            <p><strong>Size:</strong> Optimized multi-stage build</p>
+            <p><strong>Port:</strong> 80 (internal) / 3000 (external)</p>
+        </div>
+
+        <div class="info-card">
+            <h2>⚠️ Troubleshooting</h2>
+            <p>Nếu gặp lỗi "docker command not found":</p>
+            <ul>
+                <li>Cài đặt Docker Desktop</li>
+                <li>Restart terminal/command prompt</li>
+                <li>Kiểm tra Docker đang chạy</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

@@ -312,7 +312,7 @@ npm run build -- --analyze
 
 - **Issues**: https://github.com/Hoangkans/cmc-bookinh-room-v6/issues
 - **Discussions**: https://github.com/Hoangkans/cmc-bookinh-room-v6/discussions
-- **Email**: [your-email@example.com]
+- **Email**: []
 
 ## 📄 License
 
@@ -328,4 +328,4 @@ MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 
 ---
 
-**Made with ❤️ by CMC Team**
+**Made with ❤️ by Hoi ban tron Team**
