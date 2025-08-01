@@ -139,8 +139,9 @@ docker run -p 3000:80 cmc-booking-room
 ### Workflows hiện có
 
 1. **docker-build.yml** - Build và push Docker image lên GHCR
-2. **docker-hub.yml** - Build và push lên Docker Hub (tạm tắt)
-3. **deploy.yml** - Deploy lên server (tạm tắt)
+2. **ci-cd.yml** - CI/CD Pipeline cho MuonPhongCMC
+3. **docker-hub.yml** - Build và push lên Docker Hub (tạm tắt)
+4. **deploy.yml** - Deploy lên server (tạm tắt)
 
 ### Trigger
 
@@ -153,6 +154,8 @@ docker run -p 3000:80 cmc-booking-room
 - `GITHUB_TOKEN` - Tự động có sẵn
 - `DOCKERHUB_USER` - Docker Hub username
 - `DOCKERHUB_TOKEN` - Docker Hub access token
+- `DOCKER_USERNAME` - Docker Hub username
+- `DOCKER_PASSWORD` - Docker Hub password
 
 ## 📁 Cấu trúc dự án
 
@@ -328,4 +331,10 @@ MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 
 ---
 
-**Made with ❤️ by Hoi ban tron Team**
+# **Made with ❤️ by Hoi ban tron Team**
+
+## Giới thiệu đề tài
+
+**Mục đích dự án**: Xây dựng hệ thống quản lý mượn phòng giúp SV, GV, PCTSV và BV dễ dàng đăng ký và quản lý lịch mượn phòng nhanh chóng, tiện lợi. Tự động kiểm tra phòng trống, tránh trùng lịch và tối ưu sử dụng phòng học. Hỗ trợ quản lý thông tin phòng và lịch sử mượn phòng chính xác, minh bạch. Tạo giao diện thân thiện, bảo mật dữ liệu và nâng cao hiệu quả quản lý phòng tại trường đại học CMC.
+
+**Công nghệ sử dụng**: TypeScript, Vite (framework build), Docker (container hóa), GitHub Actions (CI/CD), Vercel (triển khai).
