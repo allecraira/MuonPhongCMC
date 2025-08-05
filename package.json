@@ -7,6 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest --run",
+    "test:memory": "node --max-old-space-size=4096 node_modules/vitest/dist/cli.js --run",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
   },
