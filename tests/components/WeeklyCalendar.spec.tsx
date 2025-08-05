@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/re
 import WeeklyCalendar from '@/components/WeeklyCalendar';
 import React from 'react';
 
+//test về component WeeklyCalendar - một component React hiển thị lịch tuần cho việc đặt phòng.
 vi.mock('@/lib/mongodb', () => {
   const mockBookings = [
     {
@@ -72,7 +73,7 @@ describe('WeeklyCalendar', () => {
       expect(screen.getByText(/Đã hủy: 1/)).toBeInTheDocument();
     }, { timeout: 3000 });
   });
-  
+
   it('can navigate to previous and next week', async () => {
     render(<WeeklyCalendar />);
     await waitFor(() => screen.getByText(/Lịch tổng tuần/i), { timeout: 3000 });
