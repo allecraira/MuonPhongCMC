@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { reducer } from "@/hooks/use-toast";
 
+// test quản lý các thông báo (toasts) trong ứng dụng, thêm, sửa hoặc xóa các thông báo khi cần thiết
 const baseToast = {
   id: '1',
   title: 'Test',

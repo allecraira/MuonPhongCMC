@@ -72,7 +72,7 @@ describe('WeeklyCalendar', () => {
       expect(screen.getByText(/Đã hủy: 1/)).toBeInTheDocument();
     }, { timeout: 3000 });
   });
-
+  
   it('can navigate to previous and next week', async () => {
     render(<WeeklyCalendar />);
     await waitFor(() => screen.getByText(/Lịch tổng tuần/i), { timeout: 3000 });
