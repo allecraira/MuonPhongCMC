@@ -7,9 +7,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest --run",
+    "test:memory": "node --max-old-space-size=4096 node_modules/vitest/dist/cli.js --run",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
-  
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -82,6 +82,10 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/d3-color": "^3.1.3",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.23",
@@ -89,11 +93,12 @@
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
     "globals": "^15.9.0",
+    "jsdom": "^26.1.0",
     "postcss": "^8.4.47",
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "vite": "^6.2.2",
-    "vitest": "^3.1.4"
+    "vitest": "^3.2.4"
   }
 }

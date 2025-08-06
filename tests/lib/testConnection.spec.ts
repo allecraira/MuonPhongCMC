@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { connectMongoDB } from "./testConnection";
+import { connectMongoDB } from "../../src/lib/testConnection";
 
 describe("connectMongoDB", () => {
   it("should connect to MongoDB successfully", async () => {
