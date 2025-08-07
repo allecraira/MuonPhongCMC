@@ -1,6 +1,7 @@
 name: Build and Push to Docker Hub
 
 on:
+  #test
   # Temporarily disabled - uncomment when Docker Hub secrets are configured
   # push:
   #   branches: [ main, master ]
