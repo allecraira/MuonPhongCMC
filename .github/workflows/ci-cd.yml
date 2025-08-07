@@ -28,9 +28,11 @@ jobs:
 
       - name: Run tests
         run: npm test
+        timeout-minutes: 15  # Tăng thời gian timeout nếu cần
 
       - name: Build Docker image (backend)
-        run: docker build -t muonphongcmc-be .
+        run: |
+          docker build -t muonphongcmc-be . || exit 1  # Đảm bảo Docker build không lỗi
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
