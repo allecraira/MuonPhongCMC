@@ -81,7 +81,7 @@ const About = () => {
             variants={itemVariants}
             className="text-xl sm:text-2xl text-blue-100 mb-10 max-w-3xl mx-auto leading-relaxed"
           >
-            Hệ thống đặt phòng thông minh của Trường Đại học CMC
+            Hệ thống đặt phòng thông minh của Trường Đại học AI
           </motion.p>
         </div>
       </motion.section>
@@ -408,12 +408,12 @@ const About = () => {
                   className="h-12 w-12"
                 />
                 <div>
-                  <div className="font-bold text-white text-lg">CMC Room Booking</div>
-                  <div className="text-xs text-gray-400">Trường Đại học CMC</div>
+                  <div className="font-bold text-white text-lg">Đại học AI</div>
+                  <div className="text-xs text-gray-400">Trường Đại học AI</div>
                 </div>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Hệ thống đặt phòng trực tuyến hiện đại, tiện lợi và nhanh chóng dành cho sinh viên Trường Đại học CMC.
+                Hệ thống đặt phòng trực tuyến hiện đại, tiện lợi và nhanh chóng dành cho sinh viên Trường Đại học AI.
               </p>
             </motion.div>
 
@@ -490,7 +490,7 @@ const About = () => {
             className="border-t border-gray-800 mt-12 pt-8 text-center"
           >
             <p className="text-gray-400 text-sm">
-              © 2025 Trường Đại học CMC. Tất cả quyền được hội sở hữu bởi Hội Bàn Tròn hẹ hẹ hẹ 
+              © 2025 Trường Đại học AI. Tất cả quyền được hội sở hữu bởi Hội Bàn Tròn hẹ hẹ hẹ 
             </p>
           </motion.div>
         </div>

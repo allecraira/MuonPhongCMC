@@ -29,9 +29,9 @@ const Header = ({ variant = "default" }: HeaderProps) => {
               />
               <div className="text-left">
                 <div className="text-lg font-bold text-cmc-600">
-                  CMC Room Booking
+                  Đại học AI
                 </div>
-                <div className="text-xs text-gray-500">Trường Đại học CMC</div>
+                <div className="text-xs text-gray-500">Trường Đại học AI</div>
               </div>
             </Link>
           </div>
